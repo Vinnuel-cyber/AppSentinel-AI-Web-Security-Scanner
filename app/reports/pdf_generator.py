@@ -11,6 +11,7 @@ using ReportLab:
 """
 
 import io
+import html
 from typing import Dict, Any, List
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
@@ -27,6 +28,13 @@ from reportlab.platypus import (
 
 from app.reports.pdf_theme import PDFTheme
 from app.reports.canvas_helpers import NumberedCanvas
+
+
+def _escape(val: Any) -> str:
+    """Safely escape text for ReportLab XML/HTML Paragraph elements."""
+    if val is None:
+        return ""
+    return html.escape(str(val), quote=False)
 
 
 class PDFReportGenerator:
@@ -141,15 +149,15 @@ class PDFReportGenerator:
         meta_rows = [
             [
                 Paragraph("Target Name:", self.styles["TableCellBold"]),
-                Paragraph(target.get("name", "Unknown"), self.styles["TableCell"]),
+                Paragraph(_escape(target.get("name", "Unknown")), self.styles["TableCell"]),
             ],
             [
                 Paragraph("Target URL:", self.styles["TableCellBold"]),
-                Paragraph(target.get("url", "N/A"), self.styles["TableCell"]),
+                Paragraph(_escape(target.get("url", "N/A")), self.styles["TableCell"]),
             ],
             [
                 Paragraph("Environment:", self.styles["TableCellBold"]),
-                Paragraph(target.get("environment", "Production"), self.styles["TableCell"]),
+                Paragraph(_escape(target.get("environment", "Production")), self.styles["TableCell"]),
             ],
             [
                 Paragraph("Assessment Scope:", self.styles["TableCellBold"]),
@@ -158,17 +166,17 @@ class PDFReportGenerator:
             [
                 Paragraph("Overall Risk Rating:", self.styles["TableCellBold"]),
                 Paragraph(
-                    f"<b><font color='{PDFTheme.get_severity_color(metrics.get('posture_rating', '').split()[0]).hexval()}'>{metrics.get('posture_rating', 'MODERATE')}</font></b>",
+                    f"<b><font color='{PDFTheme.get_severity_color(metrics.get('posture_rating', '').split()[0]).hexval()}'>{_escape(metrics.get('posture_rating', 'MODERATE'))}</font></b>",
                     self.styles["TableCell"],
                 ),
             ],
             [
                 Paragraph("Report Reference ID:", self.styles["TableCellBold"]),
-                Paragraph(self.data.get("report_reference", "AS-RPT-0000"), self.styles["TableCell"]),
+                Paragraph(_escape(self.data.get("report_reference", "AS-RPT-0000")), self.styles["TableCell"]),
             ],
             [
                 Paragraph("Generation Date (UTC):", self.styles["TableCellBold"]),
-                Paragraph(self.data.get("generated_at_utc", ""), self.styles["TableCell"]),
+                Paragraph(_escape(self.data.get("generated_at_utc", "")), self.styles["TableCell"]),
             ],
         ]
         meta_table = Table(meta_rows, colWidths=[150, 354])
@@ -220,10 +228,10 @@ class PDFReportGenerator:
         story.append(HRFlowable(width="100%", thickness=1, color=PDFTheme.BORDER_LIGHT, spaceAfter=8))
 
         summary_p1 = (
-            f"AppSentinel completed an authorized security assessment against <b>{target.get('name')}</b> "
-            f"(<code>{target.get('url')}</code>) utilizing deterministic vulnerability scanners, CVSS v4.0 risk metrics, "
+            f"AppSentinel completed an authorized security assessment against <b>{_escape(target.get('name'))}</b> "
+            f"(<code>{_escape(target.get('url'))}</code>) utilizing deterministic vulnerability scanners, CVSS v4.0 risk metrics, "
             f"and OWASP Top 10:2025 taxonomy. The evaluation was conducted in non-destructive mode on "
-            f"{self.data.get('generated_at_utc', 'the assessment window')}."
+            f"{_escape(self.data.get('generated_at_utc', 'the assessment window'))}."
         )
         story.append(Paragraph(summary_p1, self.styles["ReportBodyJustify"]))
 
@@ -233,7 +241,7 @@ class PDFReportGenerator:
             f"comprising <b>{counts.get('CRITICAL', 0)} Critical</b>, <b>{counts.get('HIGH', 0)} High</b>, "
             f"<b>{counts.get('MEDIUM', 0)} Medium</b>, <b>{counts.get('LOW', 0)} Low</b>, and "
             f"<b>{counts.get('INFORMATIONAL', 0)} Informational</b> defects. The aggregate target risk posture "
-            f"is evaluated as <b>{metrics.get('posture_rating', 'MODERATE')}</b> with an average CVSS v4.0 score of "
+            f"is evaluated as <b>{_escape(metrics.get('posture_rating', 'MODERATE'))}</b> with an average CVSS v4.0 score of "
             f"<b>{metrics.get('avg_cvss', 0.0)} / 10.0</b>."
         )
         story.append(Paragraph(summary_p2, self.styles["ReportBodyJustify"]))
@@ -247,10 +255,10 @@ class PDFReportGenerator:
             Paragraph("Scan Execution Mode", self.styles["TableCellHeader"]),
         ]
         card_values = [
-            Paragraph(f"<b><font color='{PDFTheme.get_severity_color(metrics.get('posture_rating', '').split()[0]).hexval()}'>{metrics.get('posture_rating', 'MODERATE')}</font></b>", self.styles["TableCellCenter"]),
+            Paragraph(f"<b><font color='{PDFTheme.get_severity_color(metrics.get('posture_rating', '').split()[0]).hexval()}'>{_escape(metrics.get('posture_rating', 'MODERATE'))}</font></b>", self.styles["TableCellCenter"]),
             Paragraph(f"<b>{total_findings}</b>", self.styles["TableCellCenter"]),
             Paragraph(f"<b>{metrics.get('avg_cvss', 0.0)}</b>", self.styles["TableCellCenter"]),
-            Paragraph(f"<b>{scan.get('scan_type', 'PASSIVE')}</b>", self.styles["TableCellCenter"]),
+            Paragraph(f"<b>{_escape(scan.get('scan_type', 'PASSIVE'))}</b>", self.styles["TableCellCenter"]),
         ]
         card_table = Table([card_headers, card_values], colWidths=[130, 110, 110, 154])
         card_table.setStyle(TableStyle([
@@ -277,14 +285,14 @@ class PDFReportGenerator:
         story.append(HRFlowable(width="100%", thickness=1, color=PDFTheme.BORDER_LIGHT, spaceAfter=8))
 
         scope_rows = [
-            [Paragraph("Target Identifier:", self.styles["TableCellBold"]), Paragraph(f"Target #{target.get('id')}", self.styles["TableCell"])],
-            [Paragraph("Target Name:", self.styles["TableCellBold"]), Paragraph(target.get("name", "N/A"), self.styles["TableCell"])],
-            [Paragraph("Target URL:", self.styles["TableCellBold"]), Paragraph(target.get("url", "N/A"), self.styles["TableCell"])],
-            [Paragraph("Deployment Environment:", self.styles["TableCellBold"]), Paragraph(target.get("environment", "Production"), self.styles["TableCell"])],
-            [Paragraph("Ownership Status:", self.styles["TableCellBold"]), Paragraph(f"Verified (Method: {target.get('verification_method', 'N/A')})", self.styles["TableCell"])],
-            [Paragraph("Scan Identifier:", self.styles["TableCellBold"]), Paragraph(f"Scan #{scan.get('id')}", self.styles["TableCell"])],
-            [Paragraph("Scan Execution Window:", self.styles["TableCellBold"]), Paragraph(f"{scan.get('started_at')} to {scan.get('completed_at')}", self.styles["TableCell"])],
-            [Paragraph("Scan Duration:", self.styles["TableCellBold"]), Paragraph(f"{scan.get('duration_seconds', 0)} seconds", self.styles["TableCell"])],
+            [Paragraph("Target Identifier:", self.styles["TableCellBold"]), Paragraph(f"Target #{_escape(target.get('id'))}", self.styles["TableCell"])],
+            [Paragraph("Target Name:", self.styles["TableCellBold"]), Paragraph(_escape(target.get("name", "N/A")), self.styles["TableCell"])],
+            [Paragraph("Target URL:", self.styles["TableCellBold"]), Paragraph(_escape(target.get("url", "N/A")), self.styles["TableCell"])],
+            [Paragraph("Deployment Environment:", self.styles["TableCellBold"]), Paragraph(_escape(target.get("environment", "Production")), self.styles["TableCell"])],
+            [Paragraph("Ownership Status:", self.styles["TableCellBold"]), Paragraph(f"Verified (Method: {_escape(target.get('verification_method', 'N/A'))})", self.styles["TableCell"])],
+            [Paragraph("Scan Identifier:", self.styles["TableCellBold"]), Paragraph(f"Scan #{_escape(scan.get('id'))}", self.styles["TableCell"])],
+            [Paragraph("Scan Execution Window:", self.styles["TableCellBold"]), Paragraph(f"{_escape(scan.get('started_at'))} to {_escape(scan.get('completed_at'))}", self.styles["TableCell"])],
+            [Paragraph("Scan Duration:", self.styles["TableCellBold"]), Paragraph(f"{_escape(scan.get('duration_seconds', 0))} seconds", self.styles["TableCell"])],
         ]
         scope_table = Table(scope_rows, colWidths=[150, 354])
         scope_table.setStyle(TableStyle([
@@ -346,7 +354,7 @@ class PDFReportGenerator:
             ]]
             for cat, cnt in sorted(owasp_dist.items(), key=lambda x: x[1], reverse=True):
                 owasp_rows.append([
-                    Paragraph(cat, self.styles["TableCell"]),
+                    Paragraph(_escape(cat), self.styles["TableCell"]),
                     Paragraph(str(cnt), self.styles["TableCellCenter"]),
                 ])
             owasp_table = Table(owasp_rows, colWidths=[400, 104])
@@ -385,8 +393,8 @@ class PDFReportGenerator:
             # Finding Header Card
             finding_header = [
                 [
-                    Paragraph(f"<b>#{idx}. {f['title']}</b>", self.styles["TableCellHeader"]),
-                    Paragraph(f"<b>{f['severity']} (CVSS {f['cvss_score']})</b>", self.styles["TableCellHeader"]),
+                    Paragraph(f"<b>#{idx}. {_escape(f['title'])}</b>", self.styles["TableCellHeader"]),
+                    Paragraph(f"<b>{_escape(f['severity'])} (CVSS {_escape(f['cvss_score'])})</b>", self.styles["TableCellHeader"]),
                 ]
             ]
             head_table = Table(finding_header, colWidths=[364, 140])
@@ -400,12 +408,12 @@ class PDFReportGenerator:
 
             # Metadata grid
             meta_rows = [
-                [Paragraph("Affected Endpoint:", self.styles["TableCellBold"]), Paragraph(f"<code>{f['affected_url']}</code>", self.styles["TableCell"])],
-                [Paragraph("HTTP Method / Param:", self.styles["TableCellBold"]), Paragraph(f"{f['http_method']} | Parameter: <code>{f['parameter']}</code>", self.styles["TableCell"])],
-                [Paragraph("OWASP 2025:", self.styles["TableCellBold"]), Paragraph(f"{f['owasp_category']}", self.styles["TableCell"])],
-                [Paragraph("CWE Taxonomy:", self.styles["TableCellBold"]), Paragraph(f"{f['cwe_id']}", self.styles["TableCell"])],
-                [Paragraph("CVSS v4.0 Vector:", self.styles["TableCellBold"]), Paragraph(f"<code>{f['cvss_vector']}</code>", self.styles["TableCell"])],
-                [Paragraph("Scanner Confidence:", self.styles["TableCellBold"]), Paragraph(f"{f['confidence']} (Deterministic)", self.styles["TableCell"])],
+                [Paragraph("Affected Endpoint:", self.styles["TableCellBold"]), Paragraph(f"<code>{_escape(f['affected_url'])}</code>", self.styles["TableCell"])],
+                [Paragraph("HTTP Method / Param:", self.styles["TableCellBold"]), Paragraph(f"{_escape(f['http_method'])} | Parameter: <code>{_escape(f['parameter'])}</code>", self.styles["TableCell"])],
+                [Paragraph("OWASP 2025:", self.styles["TableCellBold"]), Paragraph(f"{_escape(f['owasp_category'])}", self.styles["TableCell"])],
+                [Paragraph("CWE Taxonomy:", self.styles["TableCellBold"]), Paragraph(f"{_escape(f['cwe_id'])}", self.styles["TableCell"])],
+                [Paragraph("CVSS v4.0 Vector:", self.styles["TableCellBold"]), Paragraph(f"<code>{_escape(f['cvss_vector'])}</code>", self.styles["TableCell"])],
+                [Paragraph("Scanner Confidence:", self.styles["TableCellBold"]), Paragraph(f"{_escape(f['confidence'])} (Deterministic)", self.styles["TableCell"])],
             ]
             meta_table = Table(meta_rows, colWidths=[130, 374])
             meta_table.setStyle(TableStyle([
@@ -422,7 +430,7 @@ class PDFReportGenerator:
                 meta_table,
                 Spacer(1, 6),
                 Paragraph("<b>Technical Description:</b>", self.styles["ReportH3"]),
-                Paragraph(f["description"], self.styles["ReportBody"]),
+                Paragraph(_escape(f["description"]), self.styles["ReportBody"]),
             ]
 
             # Scanned Evidence
@@ -430,25 +438,27 @@ class PDFReportGenerator:
                 finding_flowables.append(Paragraph("<b>Observed Scanner Evidence (Redacted):</b>", self.styles["ReportH3"]))
                 for ev in f["evidence_list"]:
                     if ev.get("payload"):
-                        finding_flowables.append(Paragraph(f"<b>Probe Payload:</b> <code>{ev['payload']}</code>", self.styles["ReportBody"]))
+                        finding_flowables.append(Paragraph(f"<b>Probe Payload:</b> <code>{_escape(ev['payload'])}</code>", self.styles["ReportBody"]))
                     if ev.get("snippet"):
-                        finding_flowables.append(Paragraph(ev["snippet"], self.styles["ReportCode"]))
+                        finding_flowables.append(Paragraph(_escape(ev["snippet"]), self.styles["ReportCode"]))
 
             # Remediation
             finding_flowables.append(Paragraph("<b>Remediation Guidance:</b>", self.styles["ReportH3"]))
-            finding_flowables.append(Paragraph(f["remediation"], self.styles["ReportBody"]))
+            finding_flowables.append(Paragraph(_escape(f["remediation"]), self.styles["ReportBody"]))
 
             # V8 AI Security Analyst Insights (clearly labeled)
             if f.get("ai_analysis"):
                 ai = f["ai_analysis"]
-                provider_desc = "Offline Deterministic Fallback Engine" if ai["is_fallback"] else f"OpenAI ({ai['model_name']})"
-                disclaimer = f"<i>[AI Security Analyst Advisory – Provider: {provider_desc} | Confidence: {ai['ai_confidence']}]</i>"
+                provider_desc = "Offline Deterministic Fallback Engine" if ai["is_fallback"] else f"OpenAI ({_escape(ai['model_name'])})"
+                disclaimer = f"<i>[AI Security Analyst Advisory – Provider: {provider_desc} | Confidence: {_escape(ai['ai_confidence'])}]</i>"
                 finding_flowables.append(Spacer(1, 4))
                 finding_flowables.append(Paragraph(disclaimer, self.styles["ReportCallout"]))
                 if ai.get("root_cause"):
-                    finding_flowables.append(Paragraph(f"<b>Root Cause:</b> {ai['root_cause']}", self.styles["ReportBody"]))
+                    finding_flowables.append(Paragraph(f"<b>Root Cause:</b> {_escape(ai['root_cause'])}", self.styles["ReportBody"]))
                 if ai.get("code_example"):
-                    finding_flowables.append(Paragraph(ai["code_example"], self.styles["ReportCode"]))
+                    finding_flowables.append(Paragraph(_escape(ai["code_example"]), self.styles["ReportCode"]))
+                if ai.get("verification_steps"):
+                    finding_flowables.append(Paragraph(f"<b>Developer Verification Steps:</b> {_escape(ai['verification_steps'])}", self.styles["ReportBody"]))
 
             finding_flowables.append(Spacer(1, 14))
             story.append(KeepTogether(finding_flowables))
@@ -486,7 +496,7 @@ class PDFReportGenerator:
         story.append(Spacer(1, 14))
 
         conclusion_text = (
-            f"This security assessment concluded with an overall posture rating of <b>{metrics.get('posture_rating', 'MODERATE')}</b>. "
+            f"This security assessment concluded with an overall posture rating of <b>{_escape(metrics.get('posture_rating', 'MODERATE'))}</b>. "
             f"Remediation efforts should immediately prioritize confirmed critical and high severity defects. Following remediation, "
             f"a verification retest should be executed through the AppSentinel scanner to validate flaw closure."
         )

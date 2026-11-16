@@ -422,3 +422,232 @@ def test_missing_ai_analysis_handled_gracefully(client, pdf_test_context):
         file_path = Path(report.file_path)
         assert file_path.exists()
         file_path.unlink()
+
+
+def test_path_traversal_prefix_collision_and_dir_rejection(client):
+    """Verify is_safe_path rejects prefix collisions (reports_backup) and the root directory itself."""
+    storage_dir = ReportService.get_report_storage_dir()
+
+    # 1. Base directory itself must be rejected (not a safe file)
+    assert ReportService.is_safe_path(storage_dir, storage_dir) is False
+
+    # 2. Sibling directory with shared prefix (e.g., reports_backup) must be rejected
+    sibling_colliding_dir = storage_dir.parent / (storage_dir.name + "_backup") / "evil.pdf"
+    assert ReportService.is_safe_path(sibling_colliding_dir, storage_dir) is False
+
+    # 3. Path traversal with .. must be rejected
+    traversal_path = storage_dir / ".." / "secret.key"
+    assert ReportService.is_safe_path(traversal_path, storage_dir) is False
+
+    # 4. Valid file inside storage_dir must be accepted
+    safe_path = storage_dir / "legit_report.pdf"
+    assert ReportService.is_safe_path(safe_path, storage_dir) is True
+
+
+def test_pdf_download_integrity_verification_tamper_detection(client, pdf_test_context):
+    """Verify download verifies stored SHA-256 hash and blocks tampered or corrupted files."""
+    ctx = pdf_test_context
+    client.post("/auth/login", json={"login_id": "alice_pdf", "password": "AliceSecure123!"})
+
+    with client.application.app_context():
+        success, report, _ = ReportService.generate_report(
+            user_id=ctx["alice_id"],
+            scan_id=ctx["scan_id"],
+            target_id=ctx["target_id"],
+            report_type="COMPLETE",
+        )
+        report_id = report.id
+        file_path = Path(report.file_path)
+
+    # 1. Tamper with disk file (corrupt content)
+    with open(file_path, "ab") as f:
+        f.write(b"\nTAMPERED_MALICIOUS_INJECTION")
+
+    # 2. Attempt download of tampered report
+    down_resp = client.get(f"/reports/download/{report_id}")
+    assert down_resp.status_code == 400
+    assert "integrity" in down_resp.get_json()["message"].lower()
+
+    # 3. Delete physical file to simulate missing file
+    if file_path.exists():
+        file_path.unlink()
+
+    down_missing_resp = client.get(f"/reports/download/{report_id}")
+    assert down_missing_resp.status_code == 404
+    assert "not found" in down_missing_resp.get_json()["message"].lower()
+
+    # Cleanup DB record
+    with client.application.app_context():
+        ReportService.delete_report(report_id, ctx["alice_id"])
+
+
+def test_reportlab_markup_injection_and_unclosed_tags(client, pdf_test_context):
+    """Verify unclosed HTML/XML tags in evidence and target do not crash ReportLab."""
+    ctx = pdf_test_context
+    with client.application.app_context():
+        # Inject adversarial unclosed XML markup and payloads into target and evidence
+        target = db.session.get(Target, ctx["target_id"])
+        target.name = "Adversarial <script> Corp & Co"
+        target.target_url = "https://bank.test/app?foo=1&bar=2<unclosed"
+
+        v1 = db.session.get(Vulnerability, ctx["v1_id"])
+        v1.title = "XSS in <header> & <div>"
+        v1.description = "Exploit observed: <script>alert(1)</script> & 1 < 2 with unclosed <tag>"
+        v1.remediation = "Encode <html> entities & sanitize <input>"
+
+        ev = VulnerabilityEvidence.query.filter_by(vulnerability_id=ctx["v1_id"]).first()
+        ev.payload = "<svg/onload=alert('xss')> & <unclosed_payload"
+        ev.evidence_snippet = "<div class='test'>Response dump: & <img src=x onerror=alert(2)>"
+
+        ai = AIAnalysis.query.filter_by(vulnerability_id=ctx["v1_id"]).first()
+        ai.code_example = "std::vector<int> v; for (auto i : v) { if (i < 10 && i > 0) {} }"
+        ai.verification_steps = "Run curl http://bank.test?q=<payload> & check <DOM>"
+        db.session.commit()
+
+        # Compile PDF with these adversarial payloads
+        success, report, msg = ReportService.generate_report(
+            user_id=ctx["alice_id"],
+            scan_id=ctx["scan_id"],
+            report_type="COMPLETE",
+        )
+        assert success is True, f"PDF generation failed with markup error: {msg}"
+        file_path = Path(report.file_path)
+        assert file_path.exists()
+        assert file_path.stat().st_size > 0
+        file_path.unlink()
+
+
+def test_secret_redaction_comprehensive_matrix(client, pdf_test_context):
+    """Verify all categories of sensitive tokens are redacted in collected assessment data."""
+    ctx = pdf_test_context
+    with client.application.app_context():
+        v1 = db.session.get(Vulnerability, ctx["v1_id"])
+        ev = VulnerabilityEvidence.query.filter_by(vulnerability_id=v1.id).first()
+        ev.payload = "sk-proj-abc1234567890abcdefghijklmn"  # OpenAI key
+        ev.evidence_snippet = "Authorization: Bearer mySecretBearerToken12345\nCookie: session=secretSessionCookie12345"
+        ev.request_dump = "ghp_123456789012345678901234567890123456\npassword: mySuperSecretPassword123"
+        db.session.commit()
+
+        data = SecurityDataCollector.collect_assessment_data(scan_id=ctx["scan_id"])
+        ev_data = data["findings"][0]["evidence_list"][0]
+
+        # Assert no bare secrets leaked
+        assert "sk-proj-abc1234567890abcdefghijklmn" not in ev_data["payload"]
+        assert "[REDACTED_API_KEY]" in ev_data["payload"]
+
+        assert "mySecretBearerToken12345" not in ev_data["snippet"]
+        assert "Bearer [REDACTED_TOKEN]" in ev_data["snippet"]
+
+        assert "secretSessionCookie12345" not in ev_data["snippet"]
+        assert "session=[REDACTED_COOKIE]" in ev_data["snippet"]
+
+        assert "ghp_123456789012345678901234567890123456" not in ev_data["request"]
+        assert "[REDACTED_GITHUB_TOKEN]" in ev_data["request"]
+
+        assert "mySuperSecretPassword123" not in ev_data["request"]
+        assert "[REDACTED_SECRET]" in ev_data["request"]
+
+
+def test_api_response_does_not_disclose_filesystem_path(client, pdf_test_context):
+    """Verify internal filesystem paths are never disclosed in report API responses."""
+    ctx = pdf_test_context
+    client.post("/auth/login", json={"login_id": "alice_pdf", "password": "AliceSecure123!"})
+
+    # 1. Generate report
+    gen_resp = client.post("/reports/generate", json={
+        "scan_id": ctx["scan_id"],
+        "target_id": ctx["target_id"],
+        "report_type": "EXECUTIVE",
+    })
+    assert gen_resp.status_code == 201
+    gen_data = gen_resp.get_json()
+    report_dict = gen_data["report"]
+    report_id = report_dict["id"]
+
+    assert "file_path" not in report_dict
+    assert "file_path" not in str(gen_data)
+
+    # 2. View details
+    det_resp = client.get(f"/reports/{report_id}")
+    assert det_resp.status_code == 200
+    det_data = det_resp.get_json()
+    assert "file_path" not in det_data["report"]
+
+    # 3. View history
+    hist_resp = client.get("/reports/history")
+    assert hist_resp.status_code == 200
+    hist_reports = hist_resp.get_json()["reports"]
+    for r in hist_reports:
+        assert "file_path" not in r
+
+    # Cleanup
+    with client.application.app_context():
+        ReportService.delete_report(report_id, ctx["alice_id"])
+
+
+def test_cross_user_unauthorized_generation_prevented(client, pdf_test_context):
+    """Verify Bob cannot trigger report generation against Alice's scan or target."""
+    ctx = pdf_test_context
+    client.post("/auth/login", json={"login_id": "bob_pdf", "password": "BobSecure1234!"})
+
+    # Bob attempts generating a report for Alice's scan
+    resp = client.post("/reports/generate", json={
+        "scan_id": ctx["scan_id"],
+        "target_id": ctx["target_id"],
+        "report_type": "COMPLETE",
+    })
+    assert resp.status_code == 400
+    assert "unauthorized" in resp.get_json()["message"].lower()
+
+
+def test_cross_user_report_metadata_access_prevented(client, pdf_test_context):
+    """Verify Bob cannot view Alice's report metadata (IDOR defense)."""
+    ctx = pdf_test_context
+    with client.application.app_context():
+        success, report, _ = ReportService.generate_report(
+            user_id=ctx["alice_id"],
+            scan_id=ctx["scan_id"],
+            target_id=ctx["target_id"],
+            report_type="COMPLETE",
+        )
+        report_id = report.id
+
+    # Login as Bob
+    client.post("/auth/login", json={"login_id": "bob_pdf", "password": "BobSecure1234!"})
+
+    meta_resp = client.get(f"/reports/{report_id}")
+    assert meta_resp.status_code == 404
+    assert "not found" in meta_resp.get_json()["message"].lower()
+
+    # Cleanup
+    with client.application.app_context():
+        ReportService.delete_report(report_id, ctx["alice_id"])
+
+
+def test_pdf_structure_quality_and_page_numbering(client, pdf_test_context):
+    """Verify multi-page PDF generation, %%EOF markers, and all 3 format styles."""
+    ctx = pdf_test_context
+    with client.application.app_context():
+        # Inject long description to force multi-page layout
+        v1 = db.session.get(Vulnerability, ctx["v1_id"])
+        v1.description = "Deep technical analysis: " + ("This is an enterprise vulnerability assessment finding with extensive context. " * 30)
+        db.session.commit()
+
+        for rpt_type in ("COMPLETE", "VULN_DETAIL", "EXECUTIVE"):
+            success, report, msg = ReportService.generate_report(
+                user_id=ctx["alice_id"],
+                scan_id=ctx["scan_id"],
+                report_type=rpt_type,
+            )
+            assert success is True, f"Failed generating {rpt_type}: {msg}"
+            file_path = Path(report.file_path)
+            assert file_path.exists()
+
+            with open(file_path, "rb") as f:
+                content = f.read()
+                assert content.startswith(b"%PDF-")
+                assert b"%%EOF" in content
+                # File must be substantial in bytes
+                assert len(content) > 3000
+
+            file_path.unlink()

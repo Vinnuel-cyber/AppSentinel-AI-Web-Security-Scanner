@@ -140,6 +140,8 @@ def download_report(report_id: int):
     )
 
     if not success:
+        if "integrity" in err_msg.lower():
+            return jsonify({"error": "Integrity Verification Failed", "message": err_msg}), 400
         return jsonify({"error": "Unauthorized / Not Found", "message": err_msg}), 404
 
     return send_file(

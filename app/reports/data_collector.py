@@ -89,16 +89,20 @@ class SecurityDataCollector:
                     "provider": ai_rec.provider,
                     "model_name": ai_rec.model_name,
                     "ai_confidence": ai_rec.ai_confidence,
-                    "explanation": ai_rec.explanation,
-                    "root_cause": ai_rec.root_cause,
-                    "remediation": ai_rec.recommended_remediation,
-                    "code_example": ai_rec.secure_coding_example,
-                    "verification_steps": ai_rec.verification_steps,
+                    "explanation": PromptManager.sanitize_untrusted_text(ai_rec.explanation, max_len=2000),
+                    "root_cause": PromptManager.sanitize_untrusted_text(ai_rec.root_cause, max_len=1000),
+                    "remediation": PromptManager.sanitize_untrusted_text(ai_rec.recommended_remediation, max_len=2000),
+                    "code_example": PromptManager.sanitize_untrusted_text(ai_rec.secure_coding_example, max_len=2000),
+                    "verification_steps": PromptManager.sanitize_untrusted_text(ai_rec.verification_steps, max_len=1500),
                 }
+
+            clean_title = PromptManager.sanitize_untrusted_text(f.title, max_len=200) or "Security Vulnerability"
+            clean_desc = PromptManager.sanitize_untrusted_text(f.description, max_len=2000) or "No scanner description provided."
+            clean_remed = PromptManager.sanitize_untrusted_text(f.remediation, max_len=2000) or "Implement input validation and defense-in-depth controls."
 
             findings_data.append({
                 "id": f.id,
-                "title": f.title,
+                "title": clean_title,
                 "category": f.vulnerability_type or "General",
                 "severity": sev,
                 "confidence": f.confidence or "MEDIUM",
@@ -109,8 +113,8 @@ class SecurityDataCollector:
                 "affected_url": PromptManager.sanitize_untrusted_text(f.affected_url, max_len=200),
                 "parameter": PromptManager.sanitize_untrusted_text(f.parameter, max_len=100) if f.parameter else "N/A",
                 "http_method": f.http_method or "GET",
-                "description": f.description or "No scanner description provided.",
-                "remediation": f.remediation or "Implement input validation and defense-in-depth controls.",
+                "description": clean_desc,
+                "remediation": clean_remed,
                 "evidence_list": ev_list,
                 "ai_analysis": ai_data,
             })

@@ -35,12 +35,17 @@ class ReportService:
 
     @classmethod
     def is_safe_path(cls, file_path: Path, base_dir: Path) -> bool:
-        """Verify that resolved file path is strictly within base directory."""
+        """Verify that resolved file path is strictly a descendant of base directory."""
         try:
             resolved_file = file_path.resolve()
             resolved_base = base_dir.resolve()
-            return str(resolved_file).startswith(str(resolved_base))
-        except Exception:
+            # Do not allow base directory itself
+            if resolved_file == resolved_base:
+                return False
+            # Check strict relative containment without string prefix collisions
+            resolved_file.relative_to(resolved_base)
+            return True
+        except (ValueError, Exception):
             return False
 
     @classmethod
@@ -208,6 +213,21 @@ class ReportService:
         if not file_path.exists() or not file_path.is_file():
             return False, None, None, "Report file not found on storage disk."
 
+        # Verify disk file SHA-256 against stored hash
+        if report.file_hash:
+            try:
+                disk_bytes = file_path.read_bytes()
+                computed_hash = hashlib.sha256(disk_bytes).hexdigest()
+                if computed_hash != report.file_hash:
+                    return (
+                        False,
+                        None,
+                        None,
+                        "Report integrity verification failed: Stored hash does not match disk content.",
+                    )
+            except Exception as ex:
+                return False, None, None, f"Failed reading report file for integrity check: {str(ex)}"
+
         return True, file_path, report.report_filename or file_path.name, ""
 
     @classmethod
@@ -217,19 +237,23 @@ class ReportService:
         if not report:
             return False, "Report not found or unauthorized access."
 
-        # Physical file removal with path traversal check
+        # Prepare safe file path for removal after commit
         storage_dir = cls.get_report_storage_dir()
+        file_to_delete: Optional[Path] = None
         if report.file_path:
-            file_path = Path(report.file_path).resolve()
-            if cls.is_safe_path(file_path, storage_dir) and file_path.exists():
-                try:
-                    file_path.unlink()
-                except Exception as ex:
-                    current_app.logger.warning("Failed removing report file %s: %s", file_path, ex)
+            resolved_path = Path(report.file_path).resolve()
+            if cls.is_safe_path(resolved_path, storage_dir) and resolved_path.exists():
+                file_to_delete = resolved_path
 
         db.session.delete(report)
         try:
             db.session.commit()
+            # Remove physical file only after database commit succeeds
+            if file_to_delete and file_to_delete.exists():
+                try:
+                    file_to_delete.unlink()
+                except Exception as ex:
+                    current_app.logger.warning("Failed removing report file %s: %s", file_to_delete, ex)
             return True, "Report deleted successfully."
         except Exception as ex:
             db.session.rollback()
