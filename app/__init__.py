@@ -36,6 +36,14 @@ def create_app(config_name: str = "default") -> Flask:
     login_manager.login_message_category = "warning"
     csrf.init_app(app)
 
+    # Auto-run safe migrations on startup for persistent storage
+    if config_name != "testing":
+        try:
+            from app.models.migrations import run_database_migrations
+            run_database_migrations(app)
+        except Exception as exc:
+            app.logger.warning("Could not auto-run schema migrations on startup: %s", exc)
+
     @login_manager.user_loader
     def load_user(user_id):
         return db.session.get(User, int(user_id))
@@ -74,8 +82,8 @@ def create_app(config_name: str = "default") -> Flask:
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
-            "font-src 'self' https://cdnjs.cloudflare.com; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
+            "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; "
             "img-src 'self' data: https:;"
         )
         return response

@@ -13,6 +13,7 @@ from flask_login import login_required, current_user
 from app.models import (
     db,
     Target,
+    Scan,
     Vulnerability,
     OWASPAssessment,
     OWASPFindingMapping,
@@ -38,10 +39,23 @@ def index():
     else:
         targets = Target.query.filter_by(owner_id=current_user.id, is_active=True).order_by(Target.name.asc()).all()
         assessments_query = OWASPAssessment.query.filter_by(user_id=current_user.id)
+        user_target_ids = [t.id for t in targets]
         mappings_query = (
-            OWASPFindingMapping.query.join(Vulnerability)
-            .join(Target, Vulnerability.target_id == Target.id)
-            .filter(Target.owner_id == current_user.id)
+            OWASPFindingMapping.query.join(Vulnerability, OWASPFindingMapping.vulnerability_id == Vulnerability.id)
+            .outerjoin(Scan, Vulnerability.scan_id == Scan.id)
+            .filter(
+                (Vulnerability.target_id.in_(user_target_ids))
+                | (Scan.user_id == current_user.id)
+                | (OWASPFindingMapping.assessment_id.in_(
+                    db.session.query(OWASPAssessment.id).filter(OWASPAssessment.user_id == current_user.id)
+                ))
+            )
+            if user_target_ids
+            else OWASPFindingMapping.query.filter(
+                OWASPFindingMapping.assessment_id.in_(
+                    db.session.query(OWASPAssessment.id).filter(OWASPAssessment.user_id == current_user.id)
+                )
+            )
         )
 
     # Filter assessments by framework version if specified

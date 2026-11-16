@@ -96,10 +96,14 @@
                                         </span>
                                     </td>
                                     <td class="small text-secondary">
-                                        {{ (r.file_size_bytes / 1024)|round(1) }} KB
+                                        {{ ((r.file_size_bytes or 0) / 1024)|round(1) }} KB
                                     </td>
-                                    <td class="font-monospace small text-secondary" title="{{ r.file_hash }}">
-                                        {{ r.file_hash[:8] }}...{{ r.file_hash[-6:] }}
+                                    <td class="font-monospace small text-secondary" title="{{ r.file_hash or 'N/A' }}">
+                                        {% if r.file_hash and r.file_hash|length >= 14 %}
+                                            {{ r.file_hash[:8] }}...{{ r.file_hash[-6:] }}
+                                        {% else %}
+                                            {{ r.file_hash or 'N/A' }}
+                                        {% endif %}
                                     </td>
                                     <td class="small text-secondary">
                                         {{ r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else 'N/A' }}

@@ -562,7 +562,7 @@
                                                 {{ r.title }}
                                             </div>
                                             <div class="text-secondary font-monospace" style="font-size: 0.68rem;">
-                                                SHA-256: {{ r.file_hash[:10] }}...
+                                                SHA-256: {{ (r.file_hash[:10] ~ '...') if r.file_hash else 'N/A' }}
                                             </div>
                                         </td>
                                         <td>

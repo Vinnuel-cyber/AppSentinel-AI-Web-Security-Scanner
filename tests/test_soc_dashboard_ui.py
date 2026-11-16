@@ -122,3 +122,110 @@ def test_api_health_endpoint_remains_json(client):
     assert data["status"] == "healthy"
     assert "database" in data
     assert "timestamp" in data
+
+
+def test_soc_dashboard_with_reports_and_null_hash(client, soc_users):
+    """Regression Test: Dashboard rendering with reports having null file_hash and AI analysis records."""
+    u_id, _ = soc_users
+    with client.application.app_context():
+        t = Target(name="Report Target", target_url="https://report.test", domain="report.test", owner_id=u_id, is_verified=True, verification_status="VERIFIED")
+        db.session.add(t)
+        db.session.commit()
+
+        s = Scan(target_id=t.id, user_id=u_id, scan_type="full", status="completed", total_vulnerabilities=1)
+        db.session.add(s)
+        db.session.commit()
+
+        # Report with None file_hash
+        r1 = Report(scan_id=s.id, target_id=t.id, user_id=u_id, title="Test Null Hash Report", report_type="COMPLETE", file_path="reports/dummy.pdf", file_hash=None)
+        # Report with valid file_hash
+        r2 = Report(scan_id=s.id, target_id=t.id, user_id=u_id, title="Test Valid Hash Report", report_type="VULN_DETAIL", file_path="reports/dummy2.pdf", file_hash="abcdef0123456789")
+        db.session.add_all([r1, r2])
+        db.session.commit()
+
+    client.post("/auth/login", json={"login_id": "soc_analyst", "password": "SecureAnalyst123!"})
+    resp = client.get("/dashboard")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8")
+    assert "Test Null Hash Report" in html
+    assert "Test Valid Hash Report" in html
+    assert "SHA-256: N/A" in html
+
+
+def test_ai_analyst_page_with_unscored_findings(client, soc_users):
+    """Regression Test: AI Security Analyst view handles unscored findings (cvss_score=None, affected_url=None)."""
+    u_id, _ = soc_users
+    with client.application.app_context():
+        t = Target(name="AI Finding Target", target_url="https://ai.test", domain="ai.test", owner_id=u_id, is_verified=True, verification_status="VERIFIED")
+        db.session.add(t)
+        db.session.commit()
+
+        s = Scan(target_id=t.id, user_id=u_id, scan_type="full", status="completed")
+        db.session.add(s)
+        db.session.commit()
+
+        v1 = Vulnerability(scan_id=s.id, target_id=t.id, title="Unscored Vulnerability", vulnerability_type="misconfiguration", owasp_category="A05:2021 - Security Misconfiguration", description="Test unscored", severity="HIGH", cvss_score=None, affected_url="https://ai.test/unscored", status="open")
+        v2 = Vulnerability(scan_id=s.id, target_id=t.id, title="Critical Scored Finding", vulnerability_type="sqli", owasp_category="A03:2021 - Injection", description="Test scored", severity="CRITICAL", cvss_score=9.5, affected_url="https://ai.test/api?v=1", status="open")
+        db.session.add_all([v1, v2])
+        db.session.commit()
+
+    client.post("/auth/login", json={"login_id": "soc_analyst", "password": "SecureAnalyst123!"})
+    resp = client.get("/ai")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8")
+    assert "Unscored Vulnerability" in html
+    assert "Critical Scored Finding" in html
+    assert "N/A" in html
+
+    # Test analyst workbench
+    resp_workbench = client.get("/ai/analyst")
+    assert resp_workbench.status_code == 200
+
+
+def test_owasp_analyzer_page_and_navigation(client, soc_users):
+    """Regression Test: OWASP Analyzer loads correctly with filters and links."""
+    u_id, _ = soc_users
+    with client.application.app_context():
+        t = Target(name="OWASP Target", target_url="https://owasp.test", domain="owasp.test", owner_id=u_id, is_verified=True, verification_status="VERIFIED")
+        db.session.add(t)
+        db.session.commit()
+        target_id = t.id
+
+    client.post("/auth/login", json={"login_id": "soc_analyst", "password": "SecureAnalyst123!"})
+
+    # Default 2025 view
+    resp = client.get("/owasp")
+    assert resp.status_code == 200
+    assert "OWASP Top 10 Security Assessment" in resp.data.decode("utf-8")
+
+    # 2021 view
+    resp_2021 = client.get("/owasp?version=2021")
+    assert resp_2021.status_code == 200
+
+    # Assessment detail view
+    resp_detail = client.get(f"/owasp/assessment/{target_id}")
+    assert resp_detail.status_code == 200
+    assert "OWASP Target" in resp_detail.data.decode("utf-8")
+
+
+def test_reports_page_with_null_attributes(client, soc_users):
+    """Regression Test: Reports page renders safely when report attributes are None."""
+    u_id, _ = soc_users
+    with client.application.app_context():
+        t = Target(name="Rep Target", target_url="https://rep.test", domain="rep.test", owner_id=u_id, is_verified=True, verification_status="VERIFIED")
+        db.session.add(t)
+        db.session.commit()
+
+        s = Scan(target_id=t.id, user_id=u_id, scan_type="full", status="completed")
+        db.session.add(s)
+        db.session.commit()
+
+        r = Report(scan_id=s.id, target_id=t.id, user_id=u_id, title="Incomplete Report", report_type="EXECUTIVE", file_path="reports/inc.pdf", file_hash=None, file_size_bytes=None)
+        db.session.add(r)
+        db.session.commit()
+
+    client.post("/auth/login", json={"login_id": "soc_analyst", "password": "SecureAnalyst123!"})
+    resp = client.get("/reports")
+    assert resp.status_code == 200
+    assert "Incomplete Report" in resp.data.decode("utf-8")
+
