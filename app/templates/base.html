@@ -130,7 +130,7 @@
             <a class="navbar-brand brand-logo" href="/">
                 <i class="fa-solid fa-shield-halved fa-lg"></i>
                 <span>AppSentinel</span>
-                <span class="badge bg-dark border border-secondary text-info ms-1" style="font-size: 0.65rem;">v7.0-OWASP</span>
+                <span class="badge bg-dark border border-secondary text-info ms-1" style="font-size: 0.65rem;">v8.0-AI</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
                 <span class="navbar-toggler-icon"></span>
@@ -166,6 +166,11 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('risk.index') }}">
                                 <i class="fa-solid fa-gauge-high me-1 text-danger"></i> Risk Engine
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('ai.index') }}">
+                                <i class="fa-solid fa-brain me-1 text-info"></i> AI Analyst
                             </a>
                         </li>
                         {% if current_user.is_admin() %}

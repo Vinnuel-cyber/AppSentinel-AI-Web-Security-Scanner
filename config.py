@@ -53,6 +53,15 @@ class Config:
     SCANNER_REQUEST_TIMEOUT = int(os.getenv("SCANNER_REQUEST_TIMEOUT", "10"))
     SCANNER_ALLOW_PRIVATE_IPS = os.getenv("SCANNER_ALLOW_PRIVATE_IPS", "False").lower() in ("true", "1", "yes")
 
+    # AI Security Analyst Configuration (V8)
+    AI_ENABLED = os.getenv("AI_ENABLED", "false").lower() in ("true", "1", "yes")
+    AI_PROVIDER = os.getenv("AI_PROVIDER", "openai").lower()
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+    OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    AI_REQUEST_TIMEOUT = int(os.getenv("AI_REQUEST_TIMEOUT", "30"))
+    AI_MAX_OUTPUT_TOKENS = int(os.getenv("AI_MAX_OUTPUT_TOKENS", "2000"))
+    AI_DAILY_LIMIT_PER_USER = int(os.getenv("AI_DAILY_LIMIT_PER_USER", "50"))
+
 
 class DevelopmentConfig(Config):
     """Development configuration."""

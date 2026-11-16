@@ -21,6 +21,7 @@ from .owasp import (
     FindingCorrelation,
     RemediationRecommendation,
 )
+from .ai import AIConversation, AIMessage, AIUsageLog
 
 __all__ = [
     "db",
@@ -34,6 +35,9 @@ __all__ = [
     "Vulnerability",
     "VulnerabilityEvidence",
     "AIAnalysis",
+    "AIConversation",
+    "AIMessage",
+    "AIUsageLog",
     "Report",
     "ReconScan",
     "DiscoveredEndpoint",

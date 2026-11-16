@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+
+{% block title %}AI Security Analyst SOC | AppSentinel{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header & Status Bar -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h1 class="h3 fw-bold mb-1 text-light">
+                <i class="fa-solid fa-brain text-info me-2"></i>AI Security Analyst SOC
+            </h1>
+            <p class="text-secondary mb-0 small">
+                Enterprise defensive AI assistant providing deep vulnerability root-cause analysis, developer remediation blueprints, and grounded security intelligence.
+            </p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            {% if ai_status.ai_enabled and ai_status.has_api_key %}
+                <span class="badge bg-success bg-opacity-25 border border-success text-success px-3 py-2">
+                    <i class="fa-solid fa-cloud me-1"></i> Provider: {{ ai_status.provider|upper }} ({{ ai_status.model }})
+                </span>
+            {% else %}
+                <span class="badge bg-warning bg-opacity-25 border border-warning text-warning px-3 py-2">
+                    <i class="fa-solid fa-microchip me-1"></i> Mode: Offline Deterministic Fallback
+                </span>
+            {% endif %}
+            <a href="{{ url_for('ai.analyst_workbench') }}" class="btn btn-outline-info btn-sm">
+                <i class="fa-solid fa-terminal me-1"></i> Full Chat Console
+            </a>
+        </div>
+    </div>
+
+    <!-- Top Row: Target Posture Synthesizer & Quick Chat -->
+    <div class="row g-4 mb-4">
+        <!-- Target Posture Analysis Card -->
+        <div class="col-lg-5">
+            <div class="card card-cyber h-100">
+                <div class="card-header-cyber d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-light">
+                        <i class="fa-solid fa-chart-pie text-info me-2"></i>Target Posture Synthesis
+                    </span>
+                    <span class="badge bg-dark border border-secondary text-secondary">Posture Assessment</span>
+                </div>
+                <div class="card-body p-4 d-flex flex-column justify-content-between">
+                    <div>
+                        <p class="text-secondary small mb-3">
+                            Select an authorized target to generate an executive-level risk summary and systemic vulnerability root-cause evaluation.
+                        </p>
+                        <div class="mb-3">
+                            <label class="form-label text-light small fw-bold">Select Target Application</label>
+                            <select id="targetSelect" class="form-select form-control-cyber">
+                                {% if targets %}
+                                    {% for t in targets %}
+                                        <option value="{{ t.id }}">{{ t.name }} ({{ t.target_url }})</option>
+                                    {% endfor %}
+                                {% else %}
+                                    <option value="" disabled selected>No targets registered</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                        <div id="targetSummaryOutput" class="p-3 border border-secondary border-opacity-25 rounded bg-dark mb-3 d-none">
+                            <h6 id="summaryTitle" class="fw-bold text-info mb-1 small">Executive Summary</h6>
+                            <p id="summaryText" class="text-light small mb-2"></p>
+                            <h6 class="fw-bold text-warning mb-1 small">Technical Root Cause</h6>
+                            <p id="rootCauseText" class="text-secondary small mb-0"></p>
+                        </div>
+                    </div>
+                    <button id="btnAnalyzeTarget" class="btn btn-info w-100 mt-2" {% if not targets %}disabled{% endif %}>
+                        <i class="fa-solid fa-magnifying-glass-chart me-1"></i> Synthesize Target Posture
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grounded Security Chat Card -->
+        <div class="col-lg-7">
+            <div class="card card-cyber h-100">
+                <div class="card-header-cyber d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-light">
+                        <i class="fa-solid fa-comments text-info me-2"></i>Grounded Security Q&A
+                    </span>
+                    <span class="badge bg-dark border border-secondary text-info">Grounded in DB</span>
+                </div>
+                <div class="card-body p-3 d-flex flex-column justify-content-between">
+                    <div id="chatHistory" class="p-3 border border-secondary border-opacity-25 rounded bg-dark mb-3 overflow-auto" style="height: 240px;">
+                        <div class="text-secondary small mb-2 fst-italic">
+                            <i class="fa-solid fa-shield me-1 text-info"></i> Ask questions regarding vulnerabilities, remediation code, or target posture. All inquiries are strictly scoped to your authorized scan records.
+                        </div>
+                    </div>
+                    <form id="chatForm" class="d-flex gap-2">
+                        <input type="text" id="chatInput" class="form-control form-control-cyber" placeholder="e.g. How do I fix the SQL injection vulnerability on login?" required>
+                        <button type="submit" id="btnSendChat" class="btn btn-primary px-4">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Row: Recent Findings & Deep AI Diagnostic Triggers -->
+    <div class="card card-cyber">
+        <div class="card-header-cyber d-flex justify-content-between align-items-center">
+            <span class="fw-bold text-light">
+                <i class="fa-solid fa-shield-virus text-warning me-2"></i>Verified Findings Ready for AI Diagnostic Analysis
+            </span>
+            <span class="badge bg-dark border border-secondary text-secondary">Vulnerability Explanations</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0 align-middle">
+                    <thead class="table-dark text-secondary small">
+                        <tr>
+                            <th class="ps-4">Severity</th>
+                            <th>Vulnerability Title</th>
+                            <th>OWASP Category</th>
+                            <th>CVSS v4.0</th>
+                            <th>Affected Endpoint</th>
+                            <th class="text-end pe-4">AI Diagnostic</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if recent_findings %}
+                            {% for f in recent_findings %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <span class="badge {% if f.severity == 'CRITICAL' %}bg-danger{% elif f.severity == 'HIGH' %}bg-warning text-dark{% elif f.severity == 'MEDIUM' %}bg-info text-dark{% else %}bg-secondary{% endif %}">
+                                            {{ f.severity }}
+                                        </span>
+                                    </td>
+                                    <td class="fw-bold text-light">{{ f.title }}</td>
+                                    <td><span class="badge bg-dark border border-secondary text-secondary">{{ f.owasp_category }}</span></td>
+                                    <td>
+                                        <span class="fw-bold text-{% if f.cvss_score >= 9.0 %}danger{% elif f.cvss_score >= 7.0 %}warning{% else %}info{% endif %}">
+                                            {{ "%.1f"|format(f.cvss_score) }}
+                                        </span>
+                                    </td>
+                                    <td class="text-secondary small font-monospace">{{ f.affected_url[:45] }}{% if f.affected_url|length > 45 %}...{% endif %}</td>
+                                    <td class="text-end pe-4">
+                                        <button class="btn btn-outline-info btn-sm btn-analyze-finding" data-finding-id="{{ f.id }}">
+                                            <i class="fa-solid fa-microchip me-1"></i> Analyze
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-secondary">
+                                    No verified findings recorded yet. Run a scan to populate vulnerabilities.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Finding Analysis -->
+<div class="modal fade" id="analysisModal" tabindex="-1" aria-labelledby="analysisModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content card-cyber border-info">
+            <div class="modal-header border-secondary border-opacity-25">
+                <h5 class="modal-title text-light fw-bold" id="analysisModalLabel">
+                    <i class="fa-solid fa-brain text-info me-2"></i>AI Vulnerability Diagnostic
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" id="modalAnalysisBody">
+                <div class="text-center py-4 text-info" id="analysisSpinner">
+                    <div class="spinner-border text-info mb-2" role="status"></div>
+                    <div>Analyzing vulnerability root cause and generating defensive remediation...</div>
+                </div>
+                <div id="analysisContent" class="d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span id="analysisBadgeType" class="badge bg-info text-dark">vulnerability_explanation</span>
+                        <span id="analysisConfidence" class="badge bg-dark border border-secondary text-secondary">AI Confidence: HIGH</span>
+                    </div>
+                    <h6 class="fw-bold text-light">Executive Summary</h6>
+                    <p id="modalSummary" class="text-light small mb-3"></p>
+
+                    <h6 class="fw-bold text-warning">Technical Root Cause</h6>
+                    <p id="modalRootCause" class="text-secondary small mb-3"></p>
+
+                    <h6 class="fw-bold text-danger">Potential Business Impact</h6>
+                    <p id="modalImpact" class="text-secondary small mb-3"></p>
+
+                    <h6 class="fw-bold text-info">Remediation Blueprint & Secure Code</h6>
+                    <div id="modalRemediation" class="mb-3"></div>
+
+                    <h6 class="fw-bold text-success">Verification Steps</h6>
+                    <ul id="modalVerificationSteps" class="text-secondary small ps-3"></ul>
+
+                    <div id="modalReportLink" class="text-end mt-3"></div>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary border-opacity-25">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const csrfToken = document.querySelector('input[name="csrf_token"]') ? document.querySelector('input[name="csrf_token"]').value : "";
+    const modalEl = document.getElementById("analysisModal");
+    const analysisModal = new bootstrap.Modal(modalEl);
+
+    // Target Posture Analysis
+    const btnAnalyzeTarget = document.getElementById("btnAnalyzeTarget");
+    const targetSelect = document.getElementById("targetSelect");
+    const targetSummaryOutput = document.getElementById("targetSummaryOutput");
+
+    if (btnAnalyzeTarget) {
+        btnAnalyzeTarget.addEventListener("click", function () {
+            const targetId = targetSelect.value;
+            if (!targetId) return;
+
+            btnAnalyzeTarget.disabled = true;
+            btnAnalyzeTarget.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Analyzing...';
+
+            fetch(`/ai/analyze/target/${targetId}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken,
+                },
+                body: JSON.stringify({}),
+            })
+            .then(res => res.json())
+            .then(data => {
+                btnAnalyzeTarget.disabled = false;
+                btnAnalyzeTarget.innerHTML = '<i class="fa-solid fa-magnifying-glass-chart me-1"></i> Synthesize Target Posture';
+                if (data.success && data.data) {
+                    targetSummaryOutput.classList.remove("d-none");
+                    document.getElementById("summaryText").innerText = data.data.summary || "Summary generated.";
+                    document.getElementById("rootCauseText").innerText = data.data.root_cause || data.data.technical_explanation || "No systemic defects identified.";
+                } else {
+                    alert(data.message || "Failed to analyze target posture.");
+                }
+            })
+            .catch(err => {
+                btnAnalyzeTarget.disabled = false;
+                btnAnalyzeTarget.innerHTML = '<i class="fa-solid fa-magnifying-glass-chart me-1"></i> Synthesize Target Posture';
+                console.error(err);
+                alert("Error connecting to AI service.");
+            });
+        });
+    }
+
+    // Finding Analysis Buttons
+    document.querySelectorAll(".btn-analyze-finding").forEach(btn => {
+        btn.addEventListener("click", function () {
+            const findingId = this.getAttribute("data-finding-id");
+            analysisModal.show();
+            document.getElementById("analysisSpinner").classList.remove("d-none");
+            document.getElementById("analysisContent").classList.add("d-none");
+
+            fetch(`/ai/analyze/finding/${findingId}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken,
+                },
+                body: JSON.stringify({ force_refresh: false }),
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("analysisSpinner").classList.add("d-none");
+                if (data.success && data.data) {
+                    const resData = data.data;
+                    document.getElementById("analysisContent").classList.remove("d-none");
+                    document.getElementById("analysisConfidence").innerText = "AI Confidence: " + (resData.ai_confidence || "MEDIUM");
+                    document.getElementById("modalSummary").innerText = resData.summary || "";
+                    document.getElementById("modalRootCause").innerText = resData.root_cause || "";
+                    document.getElementById("modalImpact").innerText = resData.impact || "";
+
+                    const remContainer = document.getElementById("modalRemediation");
+                    remContainer.innerHTML = "";
+                    if (resData.recommendations && resData.recommendations.length > 0) {
+                        resData.recommendations.forEach(r => {
+                            const block = document.createElement("div");
+                            block.className = "p-3 border border-secondary border-opacity-25 rounded bg-dark mb-2";
+                            let html = `<div class="fw-bold text-info small mb-1">[${r.priority || 'Action'}] ${r.action || ''}</div>`;
+                            html += `<div class="text-secondary small mb-2">${r.details || ''}</div>`;
+                            if (r.code_example) {
+                                html += `<pre class="bg-black text-light p-2 rounded small font-monospace mb-0"><code>${escapeHtml(r.code_example)}</code></pre>`;
+                            }
+                            block.innerHTML = html;
+                            remContainer.appendChild(block);
+                        });
+                    }
+
+                    const verSteps = document.getElementById("modalVerificationSteps");
+                    verSteps.innerHTML = "";
+                    if (resData.verification_steps) {
+                        resData.verification_steps.forEach(s => {
+                            const li = document.createElement("li");
+                            li.innerText = s;
+                            verSteps.appendChild(li);
+                        });
+                    }
+
+                    if (data.analysis_id) {
+                        document.getElementById("modalReportLink").innerHTML = `<a href="/ai/analysis/${data.analysis_id}" class="btn btn-outline-info btn-sm"><i class="fa-solid fa-file-lines me-1"></i> Open Full Report View</a>`;
+                    }
+                } else {
+                    document.getElementById("modalAnalysisBody").innerHTML = `<div class="alert alert-danger mb-0">${escapeHtml(data.message || 'Analysis failed.')}</div>`;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById("analysisSpinner").classList.add("d-none");
+                document.getElementById("modalAnalysisBody").innerHTML = `<div class="alert alert-danger mb-0">Error connecting to AI diagnostic service.</div>`;
+            });
+        });
+    });
+
+    // Chat Form
+    const chatForm = document.getElementById("chatForm");
+    const chatInput = document.getElementById("chatInput");
+    const chatHistory = document.getElementById("chatHistory");
+
+    if (chatForm) {
+        chatForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            const query = chatInput.value.trim();
+            if (!query) return;
+
+            // Append user turn
+            const userTurn = document.createElement("div");
+            userTurn.className = "mb-2 text-end";
+            userTurn.innerHTML = `<span class="badge bg-primary text-wrap text-start p-2" style="max-width: 80%;">${escapeHtml(query)}</span>`;
+            chatHistory.appendChild(userTurn);
+            chatInput.value = "";
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            // Append assistant loading placeholder
+            const loadTurn = document.createElement("div");
+            loadTurn.className = "mb-2 text-start";
+            loadTurn.innerHTML = `<span class="badge bg-dark border border-secondary text-secondary p-2"><i class="fa-solid fa-spinner fa-spin me-1"></i> Analyzing authorized scan context...</span>`;
+            chatHistory.appendChild(loadTurn);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            const targetId = targetSelect ? targetSelect.value : null;
+
+            fetch("/ai/chat", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken,
+                },
+                body: JSON.stringify({ query: query, target_id: targetId }),
+            })
+            .then(res => res.json())
+            .then(data => {
+                loadTurn.remove();
+                const asstTurn = document.createElement("div");
+                asstTurn.className = "mb-2 text-start";
+                if (data.success && data.data) {
+                    const ans = data.data.summary || data.data.technical_explanation || "No response generated.";
+                    asstTurn.innerHTML = `<div class="p-2 border border-info border-opacity-50 rounded bg-dark text-light small" style="max-width: 85%;">
+                        <div class="fw-bold text-info mb-1"><i class="fa-solid fa-brain me-1"></i> AI Security Analyst</div>
+                        <div>${escapeHtml(ans)}</div>
+                    </div>`;
+                } else {
+                    asstTurn.innerHTML = `<div class="alert alert-danger p-2 small mb-0">${escapeHtml(data.message || 'Error occurred.')}</div>`;
+                }
+                chatHistory.appendChild(asstTurn);
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            })
+            .catch(err => {
+                loadTurn.remove();
+                console.error(err);
+                const asstTurn = document.createElement("div");
+                asstTurn.className = "mb-2 text-start";
+                asstTurn.innerHTML = `<div class="alert alert-danger p-2 small mb-0">Error communicating with AI Analyst service.</div>`;
+                chatHistory.appendChild(asstTurn);
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            });
+        });
+    }
+
+    function escapeHtml(text) {
+        if (!text) return "";
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+});
+</script>
+{% endblock %}

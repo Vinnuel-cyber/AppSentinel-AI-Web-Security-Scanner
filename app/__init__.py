@@ -50,6 +50,7 @@ def create_app(config_name: str = "default") -> Flask:
     from app.routes.owasp import owasp_bp
     from app.routes.risk import risk_bp
     from app.routes.reports import reports_bp
+    from app.routes.ai import ai_bp
 
     app.register_blueprint(health_bp)
     app.register_blueprint(auth_bp)
@@ -60,6 +61,7 @@ def create_app(config_name: str = "default") -> Flask:
     app.register_blueprint(owasp_bp)
     app.register_blueprint(risk_bp)
     app.register_blueprint(reports_bp)
+    app.register_blueprint(ai_bp)
 
     # Security Headers Hook
     @app.after_request

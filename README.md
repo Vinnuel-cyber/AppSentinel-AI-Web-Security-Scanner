@@ -189,6 +189,14 @@ pytest -v
 ```
 ### Running Specific Test Modules
 ```powershell
+pytest tests/test_ai_security_analyst.py
+pytest tests/test_ai_prompt_injection.py
+pytest tests/test_ai_response_validator.py
+pytest tests/test_ai_fallback.py
+pytest tests/test_ai_client.py
+pytest tests/test_ai_routes.py
+pytest tests/test_ai_authorization.py
+pytest tests/test_ai_config.py
 pytest tests/test_cvss_v4_compliance.py
 pytest tests/test_cvss_v4_reference_vectors.py
 pytest tests/test_owasp_2025_mapper.py
@@ -229,6 +237,6 @@ AppSentinel strictly enforces safe, evidence-based defensive auditing principles
 - [x] **V7.1: OWASP 2025 Upgrade & CVSS v4.0 Validation** (Dual OWASP 2025/2021 support, full FIRST CVSS v4.0 specification audit with EQ1–EQ6 & Threat/Environmental metrics, 14 official reference vectors, historical assessment preservation, 136 passing tests)
 - [x] **V7.2: CVSS v4.0 Compliance Audit** (Strict Base SI/SA metric audit rejecting 'S', MSI/MSA safety support triggering EQ4 Level 0, Supplemental Safety S:P/S:N separation, complete Supplemental metrics AU/R/V/RE/U, 'Not Defined' X preservation and scoring equivalence, duplicate metric rejection, CVSS-B/BT/BE/BTE score nomenclature, canonical vector ordering, 161 passing tests)
 - [x] **V7.2.1: Final CVSS Validation** (Strict case-sensitive Provider Urgency validation rejecting uppercase/lowercase/invalid strings, test count reconciliation across all 19 test suites, official reference vector coverage distinction, 162 passing tests)
-- [ ] **V8: AI Security Analyst**
+- [x] **V8: AI Security Analyst** (Modular AI Security Analyst architecture, OpenAI Python SDK & Responses API integration, offline deterministic fallback engine, prompt injection defense, structural JSON schema validation, finding root-cause & remediation diagnostics, target posture synthesizer, grounded security chat, cross-user RBAC isolation, 208 passing tests)
 - [ ] **V9: Professional PDF Report Generator**
 - [ ] **V10: Final Integration & Docker Deployment**

@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}AI Security Analyst Workbench | AppSentinel{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-lg-5">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h1 class="h3 fw-bold mb-1 text-light">
+                <i class="fa-solid fa-terminal text-info me-2"></i>Security Analyst Interactive Workbench
+            </h1>
+            <p class="text-secondary mb-0 small">
+                Conversational security interface grounded in verified target scan records, OWASP 2025 mappings, and CVSS v4.0 metrics.
+            </p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-dark border border-secondary text-info px-3 py-2">
+                <i class="fa-solid fa-shield-halved me-1"></i> Grounded Security Context Active
+            </span>
+            <a href="{{ url_for('ai.index') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-arrow-left me-1"></i> AI Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Sidebar: Conversation History & Target Scope -->
+        <div class="col-lg-3">
+            <div class="card card-cyber mb-4">
+                <div class="card-header-cyber d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-light small">
+                        <i class="fa-solid fa-crosshairs text-info me-2"></i>Target Scope Filter
+                    </span>
+                </div>
+                <div class="card-body p-3">
+                    <label class="form-label text-secondary small">Filter Scope to Target:</label>
+                    <select id="chatTargetScope" class="form-select form-control-cyber form-select-sm">
+                        <option value="">All Authorized Targets</option>
+                        {% for t in targets %}
+                            <option value="{{ t.id }}">{{ t.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="card card-cyber">
+                <div class="card-header-cyber d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-light small">
+                        <i class="fa-solid fa-clock-rotate-left text-info me-2"></i>Chat Sessions
+                    </span>
+                    <button id="btnNewSession" class="btn btn-outline-info btn-sm py-0 px-2" style="font-size: 0.75rem;">
+                        <i class="fa-solid fa-plus me-1"></i> New
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div id="sessionList" class="list-group list-group-flush bg-transparent">
+                        {% if conversations %}
+                            {% for c in conversations %}
+                                <a href="javascript:void(0)" class="list-group-item list-group-item-action bg-transparent text-light border-secondary border-opacity-25 session-item" data-session-id="{{ c.id }}">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="text-truncate small fw-bold" style="max-width: 170px;">{{ c.title }}</div>
+                                        <span class="badge bg-dark border border-secondary text-secondary" style="font-size: 0.65rem;">{{ c.message_count }} msgs</span>
+                                    </div>
+                                    <div class="text-secondary" style="font-size: 0.7rem;">{{ c.target_name or 'Global Scope' }}</div>
+                                </a>
+                            {% endfor %}
+                        {% else %}
+                            <div class="p-3 text-secondary text-center small">No prior sessions recorded.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Chat Pane -->
+        <div class="col-lg-9">
+            <div class="card card-cyber d-flex flex-column" style="height: 650px;">
+                <div class="card-header-cyber d-flex justify-content-between align-items-center py-2 px-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-robot text-info"></i>
+                        <span id="activeSessionTitle" class="fw-bold text-light small">Active Security Analyst Session</span>
+                    </div>
+                    <span id="activeScopePill" class="badge bg-dark border border-info text-info small">Scope: Global</span>
+                </div>
+                <!-- Chat Transcript Area -->
+                <div class="card-body p-4 flex-grow-1 overflow-auto" id="workbenchChatBox">
+                    <div class="d-flex gap-3 mb-3">
+                        <div class="flex-shrink-0">
+                            <span class="badge bg-info text-dark rounded-circle p-2"><i class="fa-solid fa-brain"></i></span>
+                        </div>
+                        <div class="p-3 border border-secondary border-opacity-25 rounded bg-dark text-light small flex-grow-1" style="max-width: 85%;">
+                            <div class="fw-bold text-info mb-1">AppSentinel AI Security Analyst</div>
+                            <div>Welcome to the security analysis console. You can query vulnerability root causes, request remediation code samples (Python, Flask, Jinja2, SQL), or evaluate attack surface posture. All answers are strictly grounded in your authorized database records.</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Input Footer -->
+                <div class="card-footer bg-transparent border-secondary border-opacity-25 p-3">
+                    <form id="workbenchChatForm" class="d-flex gap-2">
+                        <input type="text" id="workbenchInput" class="form-control form-control-cyber" placeholder="Ask a technical security or remediation question..." required autocomplete="off">
+                        <button type="submit" id="btnWorkbenchSend" class="btn btn-info px-4">
+                            <i class="fa-solid fa-paper-plane me-1"></i> Send
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const csrfToken = document.querySelector('input[name="csrf_token"]') ? document.querySelector('input[name="csrf_token"]').value : "";
+    let currentConversationId = null;
+
+    const chatBox = document.getElementById("workbenchChatBox");
+    const chatForm = document.getElementById("workbenchChatForm");
+    const chatInput = document.getElementById("workbenchInput");
+    const targetScopeSelect = document.getElementById("chatTargetScope");
+    const activeScopePill = document.getElementById("activeScopePill");
+    const btnNewSession = document.getElementById("btnNewSession");
+
+    targetScopeSelect.addEventListener("change", function () {
+        const text = targetScopeSelect.options[targetScopeSelect.selectedIndex].text;
+        activeScopePill.innerText = "Scope: " + text;
+    });
+
+    btnNewSession.addEventListener("click", function () {
+        currentConversationId = null;
+        document.getElementById("activeSessionTitle").innerText = "New Security Session";
+        chatBox.innerHTML = `
+            <div class="d-flex gap-3 mb-3">
+                <div class="flex-shrink-0">
+                    <span class="badge bg-info text-dark rounded-circle p-2"><i class="fa-solid fa-brain"></i></span>
+                </div>
+                <div class="p-3 border border-secondary border-opacity-25 rounded bg-dark text-light small flex-grow-1" style="max-width: 85%;">
+                    <div class="fw-bold text-info mb-1">AppSentinel AI Security Analyst</div>
+                    <div>Started a fresh session. How can I assist with your application security posture today?</div>
+                </div>
+            </div>`;
+    });
+
+    document.querySelectorAll(".session-item").forEach(item => {
+        item.addEventListener("click", function () {
+            const sessId = this.getAttribute("data-session-id");
+            loadConversation(sessId);
+        });
+    });
+
+    function loadConversation(id) {
+        currentConversationId = id;
+        fetch(`/ai/conversation/${id}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.messages) {
+                chatBox.innerHTML = "";
+                data.messages.forEach(m => {
+                    appendMessageToBox(m.role, m.content);
+                });
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        })
+        .catch(err => console.error(err));
+    }
+
+    chatForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        const query = chatInput.value.trim();
+        if (!query) return;
+
+        appendMessageToBox("user", query);
+        chatInput.value = "";
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        const loadingDiv = document.createElement("div");
+        loadingDiv.className = "d-flex gap-3 mb-3";
+        loadingDiv.innerHTML = `
+            <div class="flex-shrink-0">
+                <span class="badge bg-info text-dark rounded-circle p-2"><i class="fa-solid fa-brain"></i></span>
+            </div>
+            <div class="p-3 border border-secondary border-opacity-25 rounded bg-dark text-secondary small flex-grow-1">
+                <i class="fa-solid fa-spinner fa-spin me-1 text-info"></i> Querying security database and generating response...
+            </div>`;
+        chatBox.appendChild(loadingDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        const targetId = targetScopeSelect.value ? parseInt(targetScopeSelect.value) : null;
+
+        fetch("/ai/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken,
+            },
+            body: JSON.stringify({
+                query: query,
+                target_id: targetId,
+                conversation_id: currentConversationId,
+            }),
+        })
+        .then(res => res.json())
+        .then(data => {
+            loadingDiv.remove();
+            if (data.success && data.data) {
+                if (data.conversation_id) {
+                    currentConversationId = data.conversation_id;
+                }
+                const content = data.data.summary + (data.data.technical_explanation ? "\n\n" + data.data.technical_explanation : "");
+                appendMessageToBox("assistant", content);
+            } else {
+                appendMessageToBox("assistant", `[Error] ${data.message || 'Failed to process inquiry.'}`);
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        })
+        .catch(err => {
+            loadingDiv.remove();
+            console.error(err);
+            appendMessageToBox("assistant", "[Error] Unable to reach AI Analyst service.");
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+    });
+
+    function appendMessageToBox(role, text) {
+        const wrap = document.createElement("div");
+        wrap.className = "d-flex gap-3 mb-3 " + (role === "user" ? "justify-content-end" : "");
+
+        if (role === "user") {
+            wrap.innerHTML = `
+                <div class="p-3 bg-primary bg-opacity-75 rounded text-light small" style="max-width: 80%;">
+                    ${escapeHtml(text)}
+                </div>
+                <div class="flex-shrink-0">
+                    <span class="badge bg-secondary rounded-circle p-2"><i class="fa-solid fa-user"></i></span>
+                </div>`;
+        } else {
+            wrap.innerHTML = `
+                <div class="flex-shrink-0">
+                    <span class="badge bg-info text-dark rounded-circle p-2"><i class="fa-solid fa-brain"></i></span>
+                </div>
+                <div class="p-3 border border-secondary border-opacity-25 rounded bg-dark text-light small flex-grow-1" style="max-width: 85%;">
+                    <div class="fw-bold text-info mb-1">AppSentinel AI Security Analyst</div>
+                    <div style="white-space: pre-wrap;">${escapeHtml(text)}</div>
+                </div>`;
+        }
+
+        chatBox.appendChild(wrap);
+    }
+
+    function escapeHtml(text) {
+        if (!text) return "";
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+});
+</script>
+{% endblock %}
