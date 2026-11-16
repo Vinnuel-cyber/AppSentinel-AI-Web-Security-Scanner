@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Risk Engine Dashboard | AppSentinel{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h1 class="h3 fw-bold mb-1 text-light">
+                <i class="fa-solid fa-gauge-high text-danger me-2"></i>CVSS v4.0 Risk & Prioritization Engine
+            </h1>
+            <p class="text-secondary mb-0 small">
+                Deterministic risk scoring using the official CVSS v4.0 methodology and operational priority tiers (P1 to P5).
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('owasp.index') }}" class="btn btn-outline-info btn-sm">
+                <i class="fa-solid fa-layer-group me-1"></i> OWASP Analyzer
+            </a>
+            <a href="{{ url_for('scanner.index') }}" class="btn btn-outline-warning btn-sm">
+                <i class="fa-solid fa-shield-virus me-1"></i> Vulnerability Scans
+            </a>
+        </div>
+    </div>
+
+    <!-- Severity & Priority Stat Cards -->
+    <div class="row g-3 mb-4">
+        <!-- CVSS v4.0 Severity -->
+        <div class="col-lg-6">
+            <div class="card card-cyber h-100">
+                <div class="card-header-cyber d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-light"><i class="fa-solid fa-signal text-danger me-2"></i>CVSS v4.0 Severity Ratings</span>
+                    <span class="badge bg-dark border border-secondary text-secondary">FIRST Standard</span>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-2 text-center">
+                        <div class="col">
+                            <div class="p-2 border border-danger rounded bg-dark">
+                                <div class="h4 fw-bold text-danger mb-0">{{ severity_counts.Critical }}</div>
+                                <div class="small text-danger">Critical (9.0+)</div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="p-2 border border-warning rounded bg-dark">
+                                <div class="h4 fw-bold text-warning mb-0">{{ severity_counts.High }}</div>
+                                <div class="small text-warning">High (7.0-8.9)</div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="p-2 border border-info rounded bg-dark">
+                                <div class="h4 fw-bold text-info mb-0">{{ severity_counts.Medium }}</div>
+                                <div class="small text-info">Med (4.0-6.9)</div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="p-2 border border-secondary rounded bg-dark">
+                                <div class="h4 fw-bold text-secondary mb-0">{{ severity_counts.Low }}</div>
+                                <div class="small text-secondary">Low (0.1-3.9)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operational Priority Tiers -->
+        <div class="col-lg-6">
+            <div class="card card-cyber h-100">
+                <div class="card-header-cyber d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-light"><i class="fa-solid fa-list-ol text-warning me-2"></i>Operational Priority Tiers</span>
+                    <span class="badge bg-dark border border-secondary text-warning">Action Matrix</span>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-2 text-center">
+                        <div class="col">
+                            <div class="p-2 border border-danger rounded bg-dark">
+                                <div class="h4 fw-bold text-danger mb-0">{{ priority_counts.P1 }}</div>
+                                <div class="small text-danger">P1 Immediate</div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="p-2 border border-warning rounded bg-dark">
+                                <div class="h4 fw-bold text-warning mb-0">{{ priority_counts.P2 }}</div>
+                                <div class="small text-warning">P2 Sprint</div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="p-2 border border-info rounded bg-dark">
+                                <div class="h4 fw-bold text-info mb-0">{{ priority_counts.P3 }}</div>
+                                <div class="small text-info">P3 Release</div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="p-2 border border-secondary rounded bg-dark">
+                                <div class="h4 fw-bold text-secondary mb-0">{{ priority_counts.P4 }}</div>
+                                <div class="small text-secondary">P4 Backlog</div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="p-2 border border-secondary rounded bg-dark">
+                                <div class="h4 fw-bold text-secondary mb-0">{{ priority_counts.P5 }}</div>
+                                <div class="small text-secondary">P5 Info</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ranked Targets Row -->
+    <div class="card card-cyber mb-4">
+        <div class="card-header-cyber d-flex justify-content-between align-items-center">
+            <span class="fw-bold text-light"><i class="fa-solid fa-ranking-star text-warning me-2"></i>Target Risk Posture Ranking</span>
+            <span class="text-secondary small">{{ target_rankings|length }} targets assessed</span>
+        </div>
+        <div class="card-body p-0">
+            {% if target_rankings %}
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0 align-middle">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th class="ps-4">Target Name</th>
+                                <th>Environment</th>
+                                <th>Max CVSS v4.0</th>
+                                <th>P1 Critical Attention</th>
+                                <th>Total Assessed</th>
+                                <th class="text-end pe-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tr in target_rankings %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-bold text-light">{{ tr.target.name }}</div>
+                                        <div class="small text-secondary font-monospace">{{ tr.target.domain }}</div>
+                                    </td>
+                                    <td><span class="badge bg-dark border border-secondary text-info">{{ tr.target.environment }}</span></td>
+                                    <td>
+                                        <span class="badge {{ 'bg-danger' if tr.max_score >= 9.0 else ('bg-warning text-dark' if tr.max_score >= 7.0 else 'bg-info text-dark') }} fs-6">
+                                            {{ tr.max_score }} / 10.0
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if tr.p1_count > 0 %}
+                                            <span class="badge bg-danger-subtle text-danger border border-danger fw-bold">{{ tr.p1_count }} urgent items</span>
+                                        {% else %}
+                                            <span class="badge bg-success-subtle text-success border border-success">0 urgent</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><span class="badge bg-dark border border-secondary">{{ tr.total_risks }}</span></td>
+                                    <td class="text-end pe-4">
+                                        <a href="{{ url_for('risk.target_risk', target_id=tr.target.id) }}" class="btn btn-outline-info btn-sm">
+                                            <i class="fa-solid fa-arrow-right me-1"></i> Target Risk Profile
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4 text-secondary">
+                    <p class="mb-0">No risk assessments calculated yet. Execute scans and OWASP analysis first.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Finding Correlations Section -->
+    <div class="card card-cyber mb-4">
+        <div class="card-header-cyber d-flex justify-content-between align-items-center">
+            <span class="fw-bold text-light"><i class="fa-solid fa-diagram-project text-info me-2"></i>Correlated Vulnerability Vectors ({{ correlations|length }})</span>
+            <span class="badge bg-dark border border-secondary text-info">Compound Risk Intelligence</span>
+        </div>
+        <div class="card-body p-0">
+            {% if correlations %}
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0 align-middle">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th class="ps-4">Correlation Type</th>
+                                <th>Primary Finding</th>
+                                <th>Correlated Finding</th>
+                                <th>Compound Risk Explanation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in correlations %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <span class="badge bg-dark border border-warning text-warning text-uppercase">{{ c.correlation_type.replace('_', ' ') }}</span>
+                                    </td>
+                                    <td class="fw-bold text-light small">{{ c.source_finding.title if c.source_finding else '-' }}</td>
+                                    <td class="fw-bold text-light small">{{ c.target_finding.title if c.target_finding else '-' }}</td>
+                                    <td class="small text-secondary" style="max-width: 360px;">{{ c.explanation }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4 text-secondary">
+                    <p class="mb-0">Zero compound finding correlations identified.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

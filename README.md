@@ -68,6 +68,12 @@ AppSentinel/
 ├── .gitignore                 # Version control exclusion rules
 ├── README.md                  # Comprehensive documentation
 │
+├── docs/                      # Technical documentation
+│   ├── OWASP_MAPPING.md       # OWASP Top 10:2021 mapping methodology & CWE taxonomy
+│   ├── CVSS_V4_RISK_ENGINE.md # CVSS v4.0 specification, MacroVectors, & scoring bands
+│   ├── RISK_PRIORITIZATION.md # Operational priority (P1-P5) decision matrix & SLA guide
+│   └── REMEDIATION_GUIDE.md   # Secure code examples & verification procedures
+│
 ├── app/
 │   ├── __init__.py            # Application factory (create_app)
 │   ├── models/                # SQLAlchemy ORM database models
@@ -75,7 +81,8 @@ AppSentinel/
 │   │   ├── user.py            # User, roles, password hashing (scrypt)
 │   │   ├── target.py          # Targets, domain parsing, verification tokens
 │   │   ├── scan.py            # Scans, ScanURL, ScanLog, ScanSetting
-│   │   └── vulnerability.py   # Vulnerability, Evidence, AIAnalysis, Report
+│   │   ├── vulnerability.py   # Vulnerability, Evidence, AIAnalysis, Report
+│   │   └── owasp.py           # OWASP assessment, CVSS risk, correlation, remediation
 │   ├── routes/                # Modular Flask route blueprints
 │   │   ├── __init__.py        # Blueprint exports
 │   │   ├── health.py          # / and /api/health monitoring endpoints
@@ -83,21 +90,30 @@ AppSentinel/
 │   │   ├── dashboard.py       # Security dashboard routes (V3)
 │   │   ├── targets.py         # Target management routes (V4)
 │   │   ├── scanner.py         # Scanner engine routes (V5-V6)
+│   │   ├── owasp.py           # OWASP Top 10 assessment routes (V7)
+│   │   ├── risk.py            # CVSS v4.0 and Risk Engine routes (V7)
 │   │   └── reports.py         # Report generation routes (V9)
 │   ├── scanner/               # Security scanner engines (V5-V6)
-│   ├── security/              # SSRF guard, risk scoring, evidence (V7)
+│   ├── security/              # SSRF guard, OWASP mapper, CVSS v4 engine, correlator (V7)
 │   ├── ai/                    # AI analysis & deterministic remediation (V8)
-│   ├── services/              # Scan orchestration & PDF reporting (V9)
+│   ├── services/              # Scan orchestration, OWASP services & reporting (V7-V9)
 │   ├── templates/             # Jinja2 HTML templates
+│   │   ├── owasp/             # OWASP assessment dashboards (V7)
+│   │   └── risk/              # Risk assessment & finding risk detail pages (V7)
 │   └── static/                # CSS, JavaScript, and static assets
 │
 ├── instance/                  # Local instance files and SQLite storage
 ├── reports/                   # Generated audit PDF reports
-└── tests/                     # Automated test suite
+└── tests/                     # Automated test suite (112 test cases)
     ├── conftest.py            # Pytest fixtures and app factory harness
     ├── test_foundation.py     # Base app, security headers, CLI tests
     ├── test_health.py         # Health-check endpoint tests
-    └── test_models.py         # Database model relationships and validations
+    ├── test_models.py         # Database model relationships and validations
+    ├── test_owasp_mapper.py   # OWASP Top 10 mapping tests (V7)
+    ├── test_risk_engine.py    # CVSS v4.0 scoring & vector validation tests (V7)
+    ├── test_finding_correlator.py # Finding correlation & compound threat tests (V7)
+    ├── test_remediation_engine.py # Defensive remediation guidance tests (V7)
+    └── test_owasp_routes.py   # OWASP & Risk Engine RBAC and route tests (V7)
 ```
 
 ---
@@ -168,8 +184,13 @@ Run the full automated test suite with verbose reporting:
 ```powershell
 pytest -v
 ```
-To run specific test categories:
+### Running Specific Test Modules
 ```powershell
+pytest tests/test_owasp_mapper.py
+pytest tests/test_risk_engine.py
+pytest tests/test_finding_correlator.py
+pytest tests/test_remediation_engine.py
+pytest tests/test_owasp_routes.py
 pytest tests/test_vulnerability_scanner.py
 pytest tests/test_recon.py
 pytest tests/test_targets.py
@@ -197,7 +218,7 @@ AppSentinel strictly enforces safe, evidence-based defensive auditing principles
 - [x] **V4: Target Management & Verification** (SSRF validator, DNS TXT & HTTP well-known verification tokens, audit logs)
 - [x] **V5: Reconnaissance Engine** (Availability checker, passive tech detector, HTTP auditor, security headers, in-scope crawler, DNS analyzer, metadata parser)
 - [x] **V6: Advanced Vulnerability Scanner** (SQLi scanner, XSS scanner, Insecure cookies, Security misconfigurations, Information disclosure, Directory listing, Sensitive data exposure with redaction, Vulnerability Manager, local test lab)
-- [ ] **V7: OWASP Analyzer & Risk Engine**
+- [x] **V7: OWASP Analyzer & Risk Engine** (OWASP Top 10:2021 mapping, FIRST CVSS v4.0 scoring engine, operational priority P1-P5, finding correlation & compound threats, deterministic remediation advisories, SOC risk dashboards, 112 passing tests)
 - [ ] **V8: AI Security Analyst**
 - [ ] **V9: Professional PDF Report Generator**
 - [ ] **V10: Final Integration & Docker Deployment**

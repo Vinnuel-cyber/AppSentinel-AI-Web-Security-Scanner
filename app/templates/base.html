@@ -130,7 +130,7 @@
             <a class="navbar-brand brand-logo" href="/">
                 <i class="fa-solid fa-shield-halved fa-lg"></i>
                 <span>AppSentinel</span>
-                <span class="badge bg-dark border border-secondary text-info ms-1" style="font-size: 0.65rem;">v6.0-SCANNER</span>
+                <span class="badge bg-dark border border-secondary text-info ms-1" style="font-size: 0.65rem;">v7.0-OWASP</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
                 <span class="navbar-toggler-icon"></span>
@@ -150,12 +150,22 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('recon.index') }}">
-                                <i class="fa-solid fa-satellite-dish me-1 text-info"></i> Reconnaissance
+                                <i class="fa-solid fa-satellite-dish me-1 text-info"></i> Recon
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('scanner.index') }}">
-                                <i class="fa-solid fa-shield-virus me-1 text-warning"></i> Vulnerabilities
+                                <i class="fa-solid fa-shield-virus me-1 text-warning"></i> Scans
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('owasp.index') }}">
+                                <i class="fa-solid fa-layer-group me-1 text-info"></i> OWASP
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('risk.index') }}">
+                                <i class="fa-solid fa-gauge-high me-1 text-danger"></i> Risk Engine
                             </a>
                         </li>
                         {% if current_user.is_admin() %}

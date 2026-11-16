@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}OWASP Top 10 Analyzer | AppSentinel{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h1 class="h3 fw-bold mb-1 text-light">
+                <i class="fa-solid fa-layer-group text-info me-2"></i>OWASP Top 10 Security Assessment
+            </h1>
+            <p class="text-secondary mb-0 small">
+                Taxonomy mapping of active target findings against the official OWASP Top 10:{{ framework_version }} standard.
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('risk.index') }}" class="btn btn-outline-danger btn-sm">
+                <i class="fa-solid fa-gauge-high me-1"></i> Risk Engine Dashboard
+            </a>
+            <a href="{{ url_for('scanner.index') }}" class="btn btn-outline-info btn-sm">
+                <i class="fa-solid fa-shield-virus me-1"></i> Vulnerability Scanner
+            </a>
+        </div>
+    </div>
+
+    <!-- Mapping Confidence Metric Cards -->
+    <div class="row g-3 mb-4 text-center">
+        <div class="col-md-3">
+            <div class="card card-cyber p-3 h-100">
+                <div class="text-secondary small fw-bold text-uppercase mb-1">Total Mapped Findings</div>
+                <div class="h3 fw-bold text-light mb-0">{{ total_mappings }}</div>
+                <div class="text-secondary small mt-1">Ground-truth DB Records</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-cyber p-3 h-100 border-success">
+                <div class="text-success small fw-bold text-uppercase mb-1">High Mapping Confidence</div>
+                <div class="h3 fw-bold text-success mb-0">{{ confidence_counts.HIGH }}</div>
+                <div class="text-secondary small mt-1">Direct Signature Match</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-cyber p-3 h-100">
+                <div class="text-warning small fw-bold text-uppercase mb-1">Medium Confidence</div>
+                <div class="h3 fw-bold text-warning mb-0">{{ confidence_counts.MEDIUM }}</div>
+                <div class="text-secondary small mt-1">Contextual Heuristic</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-cyber p-3 h-100">
+                <div class="text-secondary small fw-bold text-uppercase mb-1">Framework Release</div>
+                <div class="h3 fw-bold text-info mb-0">Top 10:{{ framework_version }}</div>
+                <div class="text-secondary small mt-1">Official FIRST/OWASP Standard</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Distribution Grid -->
+    <div class="card card-cyber mb-4">
+        <div class="card-header-cyber d-flex align-items-center justify-content-between">
+            <span class="fw-bold text-light">
+                <i class="fa-solid fa-chart-column text-info me-2"></i>OWASP Top 10 Category Distribution
+            </span>
+            <span class="badge bg-dark border border-secondary text-info">Real Vulnerability Counts</span>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+                {% for code, name in category_definitions.items() %}
+                    {% set count = category_counts.get(code, 0) %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="p-3 bg-dark border {{ 'border-danger' if count > 0 else 'border-secondary' }} rounded h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                    <span class="badge bg-dark border border-secondary text-info font-monospace">{{ code }}</span>
+                                    <span class="badge {{ 'bg-danger' if count > 0 else 'bg-secondary' }}">{{ count }} findings</span>
+                                </div>
+                                <h6 class="fw-bold text-light mb-1 mt-2">{{ name }}</h6>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Launch Assessment & Target Analysis Hub -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-5">
+            <div class="card card-cyber h-100">
+                <div class="card-header-cyber">
+                    <span class="fw-bold text-light"><i class="fa-solid fa-play text-success me-2"></i>Run OWASP Mapping & Risk Scoring</span>
+                </div>
+                <div class="card-body p-4">
+                    {% if verified_targets %}
+                        <form method="POST" id="startOwaspForm">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="mb-3">
+                                <label for="target_select" class="form-label text-secondary small fw-bold">Select Target to Assess</label>
+                                <select class="form-select form-control-cyber" id="target_select" required>
+                                    <option value="" disabled selected>-- Choose verified target --</option>
+                                    {% for tgt in verified_targets %}
+                                        <option value="{{ tgt.id }}">{{ tgt.name }} ({{ tgt.domain }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="button" class="btn btn-cyber-primary w-100" onclick="launchOwasp()">
+                                <i class="fa-solid fa-layer-group me-1"></i> Analyze Target Findings
+                            </button>
+                        </form>
+                    {% else %}
+                        <p class="text-secondary small mb-0">No verified targets available. Complete verification in Target Management first.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card card-cyber h-100">
+                <div class="card-header-cyber d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-light"><i class="fa-solid fa-clock-rotate-left text-info me-2"></i>Target Assessment History</span>
+                    <span class="text-secondary small">{{ assessments|length }} runs recorded</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if assessments %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover mb-0 align-middle">
+                                <thead class="table-secondary">
+                                    <tr>
+                                        <th class="ps-3">Target</th>
+                                        <th>Framework</th>
+                                        <th>Findings Mapped</th>
+                                        <th>Top Category</th>
+                                        <th>Date</th>
+                                        <th class="text-end pe-3">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for a in assessments %}
+                                        <tr>
+                                            <td class="ps-3 fw-bold text-light">{{ a.target.name if a.target else 'Deleted' }}</td>
+                                            <td class="text-secondary small font-monospace">{{ a.framework_name }}:{{ a.framework_version }}</td>
+                                            <td><span class="badge bg-dark border border-secondary text-info">{{ a.total_findings_mapped }}</span></td>
+                                            <td class="text-warning small text-truncate" style="max-width: 180px;">{{ a.top_category or 'None' }}</td>
+                                            <td class="text-secondary small">{{ a.created_at.strftime('%Y-%m-%d %H:%M') if a.created_at else '-' }}</td>
+                                            <td class="text-end pe-3">
+                                                <a href="{{ url_for('owasp.target_assessment', target_id=a.target_id) }}" class="btn btn-outline-info btn-sm">
+                                                    <i class="fa-solid fa-eye me-1"></i> Report
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 text-secondary">
+                            <p class="mb-0">No OWASP assessments generated yet. Select a target above to analyze.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function launchOwasp() {
+    const sel = document.getElementById("target_select");
+    if (!sel || !sel.value) {
+        alert("Please select a target.");
+        return;
+    }
+    const form = document.getElementById("startOwaspForm");
+    form.action = "/owasp/analyze/" + sel.value;
+    form.submit();
+}
+</script>
+{% endblock %}

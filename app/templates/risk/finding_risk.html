@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Risk Evaluation - {{ vuln.title }} | AppSentinel{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{{ url_for('risk.index') }}" class="text-danger text-decoration-none">Risk Engine</a></li>
+                {% if target %}
+                    <li class="breadcrumb-item"><a href="{{ url_for('risk.target_risk', target_id=target.id) }}" class="text-info text-decoration-none">{{ target.name }}</a></li>
+                {% endif %}
+                <li class="breadcrumb-item active text-light">Risk Details</li>
+            </ol>
+        </nav>
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <h1 class="h3 fw-bold mb-1 text-light">{{ vuln.title }}</h1>
+                <p class="text-secondary mb-0 small">
+                    Target URL: <code>{{ vuln.affected_url }}</code> &bull; Component: <strong>{{ vuln.parameter or 'Endpoint Body' }}</strong>
+                </p>
+            </div>
+            <div>
+                <a href="{{ url_for('scanner.vulnerability_details', vuln_id=vuln.id) }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Vulnerability Technical View
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- CVSS v4.0 Metrics & Priority Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card card-cyber p-3 text-center h-100">
+                <div class="text-secondary small fw-bold text-uppercase mb-1">CVSS v4.0 Score</div>
+                <div class="h2 mb-1 fw-bold {{ 'text-danger' if risk.cvss_score >= 9.0 else ('text-warning' if risk.cvss_score >= 7.0 else 'text-info') }}">
+                    {{ risk.cvss_score }} / 10.0
+                </div>
+                <div>
+                    <span class="badge {{ 'bg-danger' if risk.severity_rating == 'Critical' else ('bg-warning text-dark' if risk.severity_rating == 'High' else 'bg-info text-dark') }}">
+                        {{ risk.severity_rating }} Severity
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card card-cyber p-3 text-center h-100">
+                <div class="text-secondary small fw-bold text-uppercase mb-1">Operational Priority Tier</div>
+                <div class="h2 mb-1 fw-bold text-warning">{{ risk.operational_priority }}</div>
+                <div class="small text-secondary">{{ risk.priority_rationale }}</div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card card-cyber p-3 text-center h-100">
+                <div class="text-secondary small fw-bold text-uppercase mb-1">Detection Confidence</div>
+                <div class="h2 mb-1 fw-bold text-success">{{ vuln.confidence }}</div>
+                <div class="small text-secondary">Verified by {{ vuln.scanner_module }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Canonical CVSS v4.0 Vector Box -->
+    <div class="card card-cyber mb-4">
+        <div class="card-header-cyber d-flex justify-content-between align-items-center">
+            <span class="fw-bold text-light"><i class="fa-solid fa-calculator text-danger me-2"></i>Canonical CVSS v4.0 Vector</span>
+            <span class="badge bg-dark border border-secondary text-secondary">CVSS:4.0 Specification</span>
+        </div>
+        <div class="card-body p-4">
+            <div class="p-3 bg-dark border border-secondary rounded font-monospace text-info fs-6 text-break mb-3">
+                {{ risk.cvss_vector }}
+            </div>
+            {% set factors = risk.get_scoring_factors() %}
+            {% if factors %}
+                <h6 class="text-light fw-bold mb-2">Evaluated Base Metric Factors:</h6>
+                <div class="row g-2 small text-secondary">
+                    <div class="col-md-3"><strong>Attack Vector (AV):</strong> {{ factors.attack_vector }}</div>
+                    <div class="col-md-3"><strong>Attack Complexity (AC):</strong> {{ factors.attack_complexity }}</div>
+                    <div class="col-md-3"><strong>Attack Requirements (AT):</strong> {{ factors.attack_requirements }}</div>
+                    <div class="col-md-3"><strong>Privileges Required (PR):</strong> {{ factors.privileges_required }}</div>
+                    <div class="col-md-3"><strong>User Interaction (UI):</strong> {{ factors.user_interaction }}</div>
+                    <div class="col-md-3"><strong>Vuln Confidentiality (VC):</strong> {{ factors.vulnerable_system_confidentiality }}</div>
+                    <div class="col-md-3"><strong>Vuln Integrity (VI):</strong> {{ factors.vulnerable_system_integrity }}</div>
+                    <div class="col-md-3"><strong>Vuln Availability (VA):</strong> {{ factors.vulnerable_system_availability }}</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Remediation Guidance Box -->
+    {% if remediation %}
+        <div class="card card-cyber border-success mb-4">
+            <div class="card-header-cyber">
+                <h5 class="text-light fw-bold mb-0"><i class="fa-solid fa-wrench text-success me-2"></i>Actionable Remediation Advisory</h5>
+            </div>
+            <div class="card-body p-4">
+                <h6 class="text-light fw-bold">Recommended Defensive Action:</h6>
+                <p class="text-light">{{ remediation.recommended_fix }}</p>
+
+                {% if remediation.secure_example %}
+                    <h6 class="text-light fw-bold mt-3">Implementation Example:</h6>
+                    <pre class="p-3 bg-dark border border-secondary rounded font-monospace text-info text-break mb-3" style="white-space: pre-wrap;">{{ remediation.secure_example }}</pre>
+                {% endif %}
+
+                <h6 class="text-light fw-bold mt-3">Verification Procedure:</h6>
+                <pre class="p-3 bg-dark border border-secondary rounded text-secondary text-break mb-3" style="white-space: pre-wrap;">{{ remediation.verification_steps }}</pre>
+
+                {% set refs = remediation.get_references() %}
+                {% if refs %}
+                    <h6 class="text-light fw-bold mt-3">Official References:</h6>
+                    <ul class="list-unstyled mb-0 small">
+                        {% for r in refs %}
+                            <li><i class="fa-solid fa-arrow-up-right-from-square text-info me-2"></i><a href="{{ r }}" target="_blank" rel="noopener noreferrer" class="text-info text-decoration-none">{{ r }}</a></li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

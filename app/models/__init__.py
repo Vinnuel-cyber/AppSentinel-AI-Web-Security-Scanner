@@ -14,6 +14,13 @@ from .recon import (
     SecurityHeaderFinding,
     WebsiteMetadata,
 )
+from .owasp import (
+    OWASPAssessment,
+    OWASPFindingMapping,
+    RiskAssessment,
+    FindingCorrelation,
+    RemediationRecommendation,
+)
 
 __all__ = [
     "db",
@@ -34,4 +41,9 @@ __all__ = [
     "DNSRecord",
     "SecurityHeaderFinding",
     "WebsiteMetadata",
+    "OWASPAssessment",
+    "OWASPFindingMapping",
+    "RiskAssessment",
+    "FindingCorrelation",
+    "RemediationRecommendation",
 ]

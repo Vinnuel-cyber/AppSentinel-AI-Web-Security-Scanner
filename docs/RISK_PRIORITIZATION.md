@@ -1,0 +1,56 @@
+# Operational Risk Prioritization Framework
+
+This document outlines AppSentinel's operational triage methodology implemented in `app/security/risk_prioritizer.py`. It explains the priority tiers (P1 to P5), the contextual decision matrix, and the explicit separation between mathematical CVSS v4.0 scores and operational actionability.
+
+---
+
+## 1. Motivation: Why CVSS Alone Is Insufficient
+
+CVSS provides an objective, standardized measure of a vulnerability's theoretical technical severity. However, raw CVSS scores do not account for operational realities:
+- An unconfirmed heuristic probe on an internal development sandbox does not warrant waking up an engineer at 2:00 AM, even if the theoretical flaw is SQL injection (CVSS 9.2).
+- Conversely, a medium-severity reflected XSS (CVSS 6.9) on a production banking portal with co-located missing CSP and unflagged session cookies presents an imminent compound threat.
+
+AppSentinel bridges this gap by calculating two complementary ratings:
+1. **CVSS v4.0 Score & Vector**: The objective technical severity benchmark.
+2. **Operational Risk Priority (P1–P5)**: The actionable triage queue level.
+
+---
+
+## 2. Priority Levels & SLA Recommendations
+
+| Priority Level | Classification | Response Urgency | Recommended Remediation SLA | Representative Findings |
+|---|---|---|---|---|
+| **P1** | **Critical / Urgent** | Immediate incident response | **Within 24–48 Hours** | Confirmed SQL Injection in Production, Exposed Cloud/DB Root Secrets, RCE. |
+| **P2** | **High / Immediate** | Active priority sprint | **Within 7 Calendar Days** | Confirmed Reflected XSS, Session Cookies Missing `HttpOnly`+`Secure`, Open Directory Listing exposing source code. |
+| **P3** | **Medium / Normal** | Standard release cycle | **Within 30 Calendar Days** | Missing `Content-Security-Policy` or `Strict-Transport-Security`, Dangerous HTTP Methods on non-critical endpoints. |
+| **P4** | **Low / Deferred** | Maintenance backlog | **Within 60–90 Calendar Days** | Server banner version disclosure, Missing `X-Content-Type-Options`, Heuristic unverified findings. |
+| **P5** | **Informational / Hygiene** | Architectural guidance | **Discretionary / Best Practice** | Diagnostic headers, technology fingerprinting, general hardening notices. |
+
+---
+
+## 3. Prioritization Decision Matrix
+
+The prioritization algorithm factors in four primary contextual signals:
+
+### 3.1 Base Severity & Exploitability
+- Starting baseline derived from CVSS v4.0 score:
+  - Score $\ge 9.0 \rightarrow$ Baseline P1
+  - Score $7.0 - 8.9 \rightarrow$ Baseline P2
+  - Score $4.0 - 6.9 \rightarrow$ Baseline P3
+  - Score $0.1 - 3.9 \rightarrow$ Baseline P4
+  - Score $0.0 \rightarrow$ Baseline P5
+
+### 3.2 Target Environment Weighting
+- **Production (`PRODUCTION`)**: Highest exposure risk. Findings with confirmed exploitability retain their high priority.
+- **Staging / Testing (`STAGING`, `TESTING`)**: Intermediate exposure. Unconfirmed findings may be lowered one tier.
+- **Development (`DEVELOPMENT`, `LOCAL`)**: Isolated sandbox environment. Findings are downranked by one operational tier unless confirmed critical.
+
+### 3.3 Detection Confidence Modifiers
+- **`CONFIRMED` / `HIGH`**: Direct positive evidence of exploitability observed (e.g., database error response returned, reflection payload unescaped). Priority maintained.
+- **`MEDIUM`**: Heuristic or signature-based match. High-severity findings may be de-escalated to prevent alert fatigue.
+- **`LOW`**: Weak or indirect indicator. Capped at P4 until manually reviewed by a security analyst.
+
+### 3.4 Compound Synergistic Multipliers
+When multiple findings target the same endpoint or form compound attack chains (detected via `FindingCorrelator`):
+- **Synergistic Escalation**: Reflected XSS coupled with missing CSP and insecure cookies automatically elevates an asset's aggregate risk tier.
+- **Systemic Defect Escalation**: The same vulnerability repeated across 3+ endpoints signals a systemic architectural defect, escalating the asset's overall operational urgency.

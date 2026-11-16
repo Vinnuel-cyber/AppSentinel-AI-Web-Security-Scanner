@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}OWASP Assessment - {{ target.name }} | AppSentinel{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb & Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{{ url_for('owasp.index') }}" class="text-info text-decoration-none">OWASP</a></li>
+                    <li class="breadcrumb-item active text-light">{{ target.name }}</li>
+                </ol>
+            </nav>
+            <h1 class="h3 fw-bold mb-1 text-light">
+                <i class="fa-solid fa-layer-group text-info me-2"></i>OWASP Top 10 Assessment: {{ target.name }}
+            </h1>
+            <p class="text-secondary mb-0 small">
+                Target URL: <code>{{ target.target_url }}</code> &bull; Environment: <strong>{{ target.environment }}</strong>
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('risk.target_risk', target_id=target.id) }}" class="btn btn-outline-danger btn-sm">
+                <i class="fa-solid fa-gauge-high me-1"></i> Target Risk Profile
+            </a>
+            <form action="{{ url_for('owasp.analyze_target', target_id=target.id) }}" method="POST" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-cyber-primary btn-sm">
+                    <i class="fa-solid fa-rotate-right me-1"></i> Re-Analyze Findings
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Metrics -->
+    {% if assessment %}
+        {% set summary = assessment.get_summary() %}
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card card-cyber p-3 text-center">
+                    <div class="text-secondary small fw-bold text-uppercase mb-1">Total Mapped</div>
+                    <div class="h3 fw-bold text-light mb-0">{{ assessment.total_findings_mapped }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card card-cyber p-3 text-center">
+                    <div class="text-secondary small fw-bold text-uppercase mb-1">Top Category</div>
+                    <div class="fw-bold text-warning mt-1 text-truncate" title="{{ assessment.top_category }}">{{ assessment.top_category or 'None' }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card card-cyber p-3 text-center">
+                    <div class="text-secondary small fw-bold text-uppercase mb-1">Correlations Detected</div>
+                    <div class="h3 fw-bold text-info mb-0">{{ summary.correlations_detected or 0 }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card card-cyber p-3 text-center">
+                    <div class="text-secondary small fw-bold text-uppercase mb-1">Max CVSS Score</div>
+                    <div class="h3 fw-bold text-danger mb-0">{{ summary.max_cvss_score or '0.0' }}</div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Mappings Table -->
+    <div class="card card-cyber">
+        <div class="card-header-cyber d-flex align-items-center justify-content-between">
+            <span class="fw-bold text-light">
+                <i class="fa-solid fa-list-check text-info me-2"></i>Finding Mappings ({{ mappings|length }})
+            </span>
+            <span class="badge bg-dark border border-secondary text-info">OWASP Top 10:2021</span>
+        </div>
+        <div class="card-body p-0">
+            {% if mappings %}
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0 align-middle">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th class="ps-4">Vulnerability Finding</th>
+                                <th>Primary Category</th>
+                                <th>Secondary Category</th>
+                                <th>Confidence</th>
+                                <th>Mapping Rationale</th>
+                                <th class="text-end pe-4">Risk Detail</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in mappings %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-bold text-light">{{ m.vulnerability.title }}</div>
+                                        <div class="small text-secondary font-monospace">{{ m.vulnerability.affected_url }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-dark border border-info text-info font-monospace">{{ m.primary_category_code }}</span>
+                                        <div class="small text-light mt-1">{{ m.primary_category_name }}</div>
+                                    </td>
+                                    <td>
+                                        {% if m.secondary_category_code %}
+                                            <span class="badge bg-dark border border-secondary text-secondary font-monospace">{{ m.secondary_category_code }}</span>
+                                            <div class="small text-secondary mt-1">{{ m.secondary_category_name }}</div>
+                                        {% else %}
+                                            <span class="text-secondary small">None</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if m.confidence == 'HIGH' %}
+                                            <span class="badge bg-success-subtle text-success border border-success">HIGH</span>
+                                        {% elif m.confidence == 'MEDIUM' %}
+                                            <span class="badge bg-warning-subtle text-warning border border-warning">MEDIUM</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary-subtle text-secondary">LOW</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small text-secondary" style="max-width: 320px;">
+                                        {{ m.mapping_rationale }}
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <a href="{{ url_for('risk.finding_risk', finding_id=m.vulnerability_id) }}" class="btn btn-outline-danger btn-sm">
+                                            <i class="fa-solid fa-gauge-high"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5 text-secondary">
+                    <i class="fa-solid fa-shield-virus fa-3x mb-3 text-secondary"></i>
+                    <p class="mb-0">No mapped findings yet. Execute a vulnerability scan, then click 'Re-Analyze Findings'.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

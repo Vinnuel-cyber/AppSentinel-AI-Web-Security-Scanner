@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Target Risk Profile - {{ target.name }} | AppSentinel{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{{ url_for('risk.index') }}" class="text-danger text-decoration-none">Risk Engine</a></li>
+                    <li class="breadcrumb-item active text-light">{{ target.name }}</li>
+                </ol>
+            </nav>
+            <h1 class="h3 fw-bold mb-1 text-light">
+                <i class="fa-solid fa-gauge-high text-danger me-2"></i>Risk Profile: {{ target.name }}
+            </h1>
+            <p class="text-secondary mb-0 small">
+                Target URL: <code>{{ target.target_url }}</code> &bull; Environment: <strong>{{ target.environment }}</strong>
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('owasp.target_assessment', target_id=target.id) }}" class="btn btn-outline-info btn-sm">
+                <i class="fa-solid fa-layer-group me-1"></i> OWASP Assessment
+            </a>
+            <a href="{{ url_for('targets.details', target_id=target.id) }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-crosshairs me-1"></i> Target Details
+            </a>
+        </div>
+    </div>
+
+    <!-- Findings Prioritization Table -->
+    <div class="card card-cyber mb-4">
+        <div class="card-header-cyber d-flex justify-content-between align-items-center">
+            <span class="fw-bold text-light">
+                <i class="fa-solid fa-list-ol text-warning me-2"></i>Prioritized Findings ({{ risk_records|length }})
+            </span>
+            <span class="badge bg-dark border border-secondary text-secondary">CVSS v4.0 Scored</span>
+        </div>
+        <div class="card-body p-0">
+            {% if risk_records %}
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0 align-middle">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th class="ps-4">Priority</th>
+                                <th>Finding Title</th>
+                                <th>CVSS v4.0</th>
+                                <th>Vector String</th>
+                                <th>Operational Rationale</th>
+                                <th class="text-end pe-4">Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in risk_records %}
+                                <tr>
+                                    <td class="ps-4">
+                                        {% if r.operational_priority == 'P1' %}
+                                            <span class="badge bg-danger fs-6">P1</span>
+                                        {% elif r.operational_priority == 'P2' %}
+                                            <span class="badge bg-warning text-dark fs-6">P2</span>
+                                        {% elif r.operational_priority == 'P3' %}
+                                            <span class="badge bg-info text-dark fs-6">P3</span>
+                                        {% elif r.operational_priority == 'P4' %}
+                                            <span class="badge bg-secondary fs-6">P4</span>
+                                        {% else %}
+                                            <span class="badge bg-dark border border-secondary fs-6">P5</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-light">{{ r.vulnerability.title }}</div>
+                                        <div class="small text-secondary font-monospace">{{ r.vulnerability.affected_url }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge {{ 'bg-danger' if r.cvss_score >= 9.0 else ('bg-warning text-dark' if r.cvss_score >= 7.0 else 'bg-info text-dark') }}">
+                                            {{ r.cvss_score }} ({{ r.severity_rating }})
+                                        </span>
+                                    </td>
+                                    <td><code class="small text-secondary">{{ r.cvss_vector }}</code></td>
+                                    <td class="small text-secondary" style="max-width: 300px;">{{ r.priority_rationale }}</td>
+                                    <td class="text-end pe-4">
+                                        <a href="{{ url_for('risk.finding_risk', finding_id=r.vulnerability_id) }}" class="btn btn-outline-info btn-sm">
+                                            <i class="fa-solid fa-arrow-right"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5 text-secondary">
+                    <p class="mb-0">No risk assessments calculated for this target.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
