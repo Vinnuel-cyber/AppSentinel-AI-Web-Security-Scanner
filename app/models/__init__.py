@@ -5,7 +5,7 @@ db = SQLAlchemy()
 from .user import User
 from .target import Target, TargetAuditLog
 from .scan import Scan, ScanURL, ScanLog, ScanSetting
-from .vulnerability import Vulnerability, VulnerabilityEvidence, AIAnalysis, Report
+from .vulnerability import Vulnerability, VulnerabilityEvidence, AIAnalysis, Report, SecurityReport
 from .recon import (
     ReconScan,
     DiscoveredEndpoint,
@@ -39,6 +39,7 @@ __all__ = [
     "AIMessage",
     "AIUsageLog",
     "Report",
+    "SecurityReport",
     "ReconScan",
     "DiscoveredEndpoint",
     "TechnologyFingerprint",

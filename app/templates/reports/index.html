@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}Report Center | AppSentinel{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h1 class="h3 fw-bold mb-1 text-light">
+                <i class="fa-solid fa-file-pdf text-danger me-2"></i>Professional Report Center
+            </h1>
+            <p class="text-secondary mb-0 small">
+                Generate, manage, and download publication-quality PDF security assessment reports grounded in verified vulnerability findings, CVSS v4.0 metrics, and OWASP 2025 mappings.
+            </p>
+        </div>
+        <div>
+            <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#generateReportModal" {% if not scans %}disabled{% endif %}>
+                <i class="fa-solid fa-file-circle-plus me-1"></i> Generate New Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card card-cyber p-3 text-center">
+                <div class="small text-secondary mb-1">Total Reports Generated</div>
+                <div class="h4 fw-bold text-light mb-0">{{ reports|length }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-cyber p-3 text-center">
+                <div class="small text-secondary mb-1">Complete Assessments</div>
+                <div class="h4 fw-bold text-info mb-0">
+                    {{ reports|selectattr('report_type', 'equalto', 'COMPLETE')|list|length }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-cyber p-3 text-center">
+                <div class="small text-secondary mb-1">Vulnerability Details</div>
+                <div class="h4 fw-bold text-warning mb-0">
+                    {{ reports|selectattr('report_type', 'equalto', 'VULN_DETAIL')|list|length }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-cyber p-3 text-center">
+                <div class="small text-secondary mb-1">Executive Summaries</div>
+                <div class="h4 fw-bold text-success mb-0">
+                    {{ reports|selectattr('report_type', 'equalto', 'EXECUTIVE')|list|length }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report History Table -->
+    <div class="card card-cyber">
+        <div class="card-header-cyber d-flex justify-content-between align-items-center">
+            <span class="fw-bold text-light">
+                <i class="fa-solid fa-clock-rotate-left text-info me-2"></i>Generated Report History
+            </span>
+            <span class="badge bg-dark border border-secondary text-secondary">PDF Format</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0 align-middle">
+                    <thead class="table-dark text-secondary small">
+                        <tr>
+                            <th class="ps-4">Report Title</th>
+                            <th>Target Application</th>
+                            <th>Report Type</th>
+                            <th>File Size</th>
+                            <th>Integrity (SHA-256)</th>
+                            <th>Generated Date (UTC)</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportTableBody">
+                        {% if reports %}
+                            {% for r in reports %}
+                                <tr id="report-row-{{ r.id }}">
+                                    <td class="ps-4">
+                                        <div class="fw-bold text-light">
+                                            <i class="fa-solid fa-file-pdf text-danger me-1"></i> {{ r.title }}
+                                        </div>
+                                        <div class="text-secondary small font-monospace">{{ r.report_filename }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="text-light">{{ r.target.name if r.target else 'Target #' ~ r.target_id }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if r.report_type == 'COMPLETE' %}bg-primary{% elif r.report_type == 'VULN_DETAIL' %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                            {{ r.report_type }}
+                                        </span>
+                                    </td>
+                                    <td class="small text-secondary">
+                                        {{ (r.file_size_bytes / 1024)|round(1) }} KB
+                                    </td>
+                                    <td class="font-monospace small text-secondary" title="{{ r.file_hash }}">
+                                        {{ r.file_hash[:8] }}...{{ r.file_hash[-6:] }}
+                                    </td>
+                                    <td class="small text-secondary">
+                                        {{ r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else 'N/A' }}
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('reports.download_report', report_id=r.id) }}" class="btn btn-outline-info" title="Download PDF">
+                                                <i class="fa-solid fa-download"></i>
+                                            </a>
+                                            <button class="btn btn-outline-danger btn-delete-report" data-report-id="{{ r.id }}" title="Delete Report">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr id="emptyReportRow">
+                                <td colspan="7" class="text-center py-5 text-secondary">
+                                    <i class="fa-solid fa-folder-open fa-2x mb-3 text-secondary"></i>
+                                    <div>No security reports generated yet.</div>
+                                    <div class="small mt-1">Click "Generate New Report" to export a professional assessment PDF.</div>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Generate New Report -->
+<div class="modal fade" id="generateReportModal" tabindex="-1" aria-labelledby="generateReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content card-cyber border-danger">
+            <div class="modal-header border-secondary border-opacity-25">
+                <h5 class="modal-title text-light fw-bold" id="generateReportModalLabel">
+                    <i class="fa-solid fa-file-pdf text-danger me-2"></i>Generate Security Assessment PDF
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="generateReportForm">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label text-light small fw-bold">Select Scan Assessment</label>
+                        <select id="modalScanSelect" name="scan_id" class="form-select form-control-cyber" required>
+                            {% for s in scans %}
+                                <option value="{{ s.id }}">
+                                    Scan #{{ s.id }} – Target #{{ s.target_id }} ({{ s.scan_type|upper }}, {{ s.total_vulnerabilities }} findings)
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-light small fw-bold">Select Report Type</label>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="report_type" id="typeComplete" value="COMPLETE" checked>
+                            <label class="form-check-label text-light small" for="typeComplete">
+                                <strong>Complete Security Assessment Report</strong>
+                                <div class="text-secondary" style="font-size: 0.75rem;">Full audit report containing executive summary, CVSS v4.0 metrics, OWASP 2025 matrix, detailed findings, evidence, and remediation blueprints.</div>
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="report_type" id="typeVuln" value="VULN_DETAIL">
+                            <label class="form-check-label text-light small" for="typeVuln">
+                                <strong>Vulnerability Detail Report</strong>
+                                <div class="text-secondary" style="font-size: 0.75rem;">Developer-focused technical breakdown emphasizing defect mechanics, code samples, and verification steps.</div>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="report_type" id="typeExec" value="EXECUTIVE">
+                            <label class="form-check-label text-light small" for="typeExec">
+                                <strong>Executive Summary Report</strong>
+                                <div class="text-secondary" style="font-size: 0.75rem;">Concise strategic summary designed for leadership, compliance, and college project presentation.</div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary border-opacity-25">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" id="btnSubmitGenerate" class="btn btn-danger btn-sm px-3">
+                        <i class="fa-solid fa-file-arrow-down me-1"></i> Compile & Generate PDF
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const csrfToken = document.querySelector('input[name="csrf_token"]') ? document.querySelector('input[name="csrf_token"]').value : "";
+    const genModalEl = document.getElementById("generateReportModal");
+    const genModal = new bootstrap.Modal(genModalEl);
+    const genForm = document.getElementById("generateReportForm");
+    const btnSubmit = document.getElementById("btnSubmitGenerate");
+
+    genForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        const scanId = document.getElementById("modalScanSelect").value;
+        const selectedType = document.querySelector('input[name="report_type"]:checked').value;
+
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Compiling PDF...';
+
+        fetch("/reports/generate", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken,
+            },
+            body: JSON.stringify({
+                scan_id: scanId,
+                report_type: selectedType,
+            }),
+        })
+        .then(res => res.json())
+        .then(data => {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = '<i class="fa-solid fa-file-arrow-down me-1"></i> Compile & Generate PDF';
+            if (data.success && data.report) {
+                genModal.hide();
+                window.location.reload();
+            } else {
+                alert(data.message || "Failed to generate report.");
+            }
+        })
+        .catch(err => {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = '<i class="fa-solid fa-file-arrow-down me-1"></i> Compile & Generate PDF';
+            console.error(err);
+            alert("Error communicating with report generation service.");
+        });
+    });
+
+    // Delete Report Handlers
+    document.querySelectorAll(".btn-delete-report").forEach(btn => {
+        btn.addEventListener("click", function () {
+            const reportId = this.getAttribute("data-report-id");
+            if (!confirm(`Are you sure you want to delete report #${reportId}? This will remove the file from storage.`)) {
+                return;
+            }
+
+            fetch(`/reports/${reportId}`, {
+                method: "DELETE",
+                headers: {
+                    "X-CSRFToken": csrfToken,
+                },
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const row = document.getElementById(`report-row-${reportId}`);
+                    if (row) row.remove();
+                } else {
+                    alert(data.message || "Failed to delete report.");
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Error deleting report.");
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
