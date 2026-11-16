@@ -5,58 +5,72 @@
 
 {% block content %}
 <!-- ======================================================= -->
-<!-- DASHBOARD HEADER & QUICK ACTION BAR                     -->
+<!-- SECTION 3: DASHBOARD HERO SECTION                       -->
 <!-- ======================================================= -->
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-    <div>
-        <div class="d-flex align-items-center gap-2 mb-1">
-            <h4 class="fw-bold mb-0 text-light">
-                <i class="fa-solid fa-gauge-high text-info me-2"></i>Security Operations Center
-            </h4>
-            <span class="badge bg-dark border border-secondary text-info font-monospace" style="font-size: 0.7rem;">LIVE POSTURE</span>
+<div class="card card-cyber p-4 mb-4 border-secondary border-opacity-25" style="background: linear-gradient(135deg, rgba(17, 27, 45, 0.95) 0%, rgba(22, 34, 56, 0.95) 100%);">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="p-2 rounded bg-dark border border-secondary text-info">
+                    <i class="fa-solid fa-gauge-high"></i>
+                </span>
+                <h3 class="fw-bold mb-0 text-light letter-spacing-1">
+                    Security Operations Center
+                </h3>
+                <span class="badge bg-dark border border-secondary text-info font-monospace ms-2" style="font-size: 0.7rem;">ENTERPRISE POSTURE</span>
+            </div>
+            <p class="text-secondary small mb-2" style="max-width: 680px;">
+                Unified visibility into application security, vulnerabilities and risk intelligence. Continuous non-destructive vulnerability assessment across enrolled target assets.
+            </p>
+            <div class="d-flex align-items-center gap-3 text-secondary small font-monospace flex-wrap" style="font-size: 0.75rem;">
+                <span>
+                    <i class="fa-regular fa-calendar me-1 text-info"></i>{{ metrics.meta.current_date if metrics.meta else 'Current Session' }}
+                </span>
+                <span>&bull;</span>
+                <span>
+                    <i class="fa-regular fa-clock me-1 text-info"></i>Last Refreshed: {{ metrics.meta.last_refresh if metrics.meta else 'Real-time' }}
+                </span>
+            </div>
         </div>
-        <p class="text-muted-cyber small mb-0">
-            Real-time attack surface telemetry, evidence-based vulnerability intelligence & compliance triage.
-        </p>
-    </div>
 
-    <!-- Quick Action Functional Shortcuts (Section 9) -->
-    <div class="d-flex gap-2 flex-wrap align-items-center">
-        <a href="{{ url_for('targets.add') }}" class="btn btn-cyber-primary btn-sm px-3 shadow-sm" title="Register New Authorized Target">
-            <i class="fa-solid fa-plus me-1"></i> Add Target
-        </a>
-        <a href="{{ url_for('scanner.index') }}" class="btn btn-outline-warning btn-sm px-3" title="Launch Active Security Scan">
-            <i class="fa-solid fa-shield-virus me-1"></i> Start Scan
-        </a>
-        <a href="{{ url_for('scanner.vulnerabilities_list') }}" class="btn btn-outline-danger btn-sm px-3" title="Inspect Discovered Vulnerabilities">
-            <i class="fa-solid fa-bug me-1"></i> Vulnerabilities
-        </a>
-        <a href="{{ url_for('ai.index') }}" class="btn btn-outline-info btn-sm px-3" title="Open AI Security Analyst Console">
-            <i class="fa-solid fa-brain me-1"></i> AI Analyst
-        </a>
-        <a href="{{ url_for('reports.index') }}" class="btn btn-outline-secondary btn-sm px-3 text-light" title="Compile PDF Audit Report">
-            <i class="fa-solid fa-file-pdf text-danger me-1"></i> Reports
-        </a>
+        <!-- Hero Actions -->
+        <div class="d-flex gap-2 flex-wrap align-items-center">
+            <button type="button" class="btn btn-outline-secondary btn-sm px-3 text-light" onclick="window.location.reload();" title="Refresh Live Metrics">
+                <i class="fa-solid fa-rotate me-1 text-info"></i> Refresh
+            </button>
+            <a href="{{ url_for('targets.add') }}" class="btn btn-cyber-primary btn-sm px-3 shadow-sm" title="Register New Authorized Target">
+                <i class="fa-solid fa-plus me-1"></i> Add Target
+            </a>
+            <a href="{{ url_for('scanner.index') }}" class="btn btn-outline-warning btn-sm px-3" title="Launch Active Security Scan">
+                <i class="fa-solid fa-shield-virus me-1"></i> Start Scan
+            </a>
+            <a href="{{ url_for('reports.index') }}" class="btn btn-outline-secondary btn-sm px-3 text-light" title="Compile PDF Audit Report">
+                <i class="fa-solid fa-file-pdf text-danger me-1"></i> Reports
+            </a>
+            <a href="{{ url_for('ai.index') }}" class="btn btn-outline-info btn-sm px-3" title="Open AI Security Analyst Console">
+                <i class="fa-solid fa-brain me-1"></i> AI Analyst
+            </a>
+        </div>
     </div>
 </div>
 
 <!-- ======================================================= -->
-<!-- 1. FOUR PRIMARY KPI METRIC CARDS (Section 4)            -->
+<!-- SECTION 4: FOUR EXECUTIVE KPI CARDS                     -->
 <!-- ======================================================= -->
 <div class="row g-3 mb-4">
-    <!-- Card 1: Total Targets -->
+    <!-- CARD 1: TOTAL TARGETS -->
     <div class="col-sm-6 col-xl-3">
         <div class="card card-cyber p-3 h-100 position-relative overflow-hidden">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="text-muted-cyber small fw-semibold text-uppercase letter-spacing-1">Total Targets</div>
+                    <div class="text-secondary small fw-semibold text-uppercase letter-spacing-1" style="font-size: 0.72rem;">Total Targets</div>
                     <h2 class="fw-bold text-light mt-2 mb-0 font-monospace">{{ metrics.targets.total }}</h2>
                 </div>
-                <div class="p-3 rounded-3" style="background-color: rgba(0, 210, 255, 0.12); border: 1px solid rgba(0, 210, 255, 0.25); color: #00d2ff;">
+                <div class="p-3 rounded-3" style="background-color: rgba(34, 211, 238, 0.12); border: 1px solid rgba(34, 211, 238, 0.25); color: #22D3EE;">
                     <i class="fa-solid fa-crosshairs fa-xl"></i>
                 </div>
             </div>
-            <div class="mt-3 pt-2 border-top border-secondary small d-flex justify-content-between text-muted-cyber">
+            <div class="mt-3 pt-2 border-top border-secondary border-opacity-25 small d-flex justify-content-between text-secondary">
                 <span class="text-success fw-medium">
                     <i class="fa-solid fa-circle-check me-1"></i>{{ metrics.targets.verified }} Verified
                 </span>
@@ -67,40 +81,44 @@
         </div>
     </div>
 
-    <!-- Card 2: Completed Scans -->
+    <!-- CARD 2: COMPLETED SCANS -->
     <div class="col-sm-6 col-xl-3">
         <div class="card card-cyber p-3 h-100 position-relative overflow-hidden">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="text-muted-cyber small fw-semibold text-uppercase letter-spacing-1">Completed Scans</div>
+                    <div class="text-secondary small fw-semibold text-uppercase letter-spacing-1" style="font-size: 0.72rem;">Completed Scans</div>
                     <h2 class="fw-bold text-light mt-2 mb-0 font-monospace">{{ metrics.scans.completed }}</h2>
                 </div>
-                <div class="p-3 rounded-3" style="background-color: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.25); color: #10b981;">
+                <div class="p-3 rounded-3" style="background-color: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.25); color: #22C55E;">
                     <i class="fa-solid fa-shield-virus fa-xl"></i>
                 </div>
             </div>
-            <div class="mt-3 pt-2 border-top border-secondary small d-flex justify-content-between text-muted-cyber">
+            <div class="mt-3 pt-2 border-top border-secondary border-opacity-25 small d-flex justify-content-between text-secondary">
                 <span class="text-light">
                     Total: <strong class="text-info">{{ metrics.scans.total }}</strong> launches
                 </span>
-                <span class="text-secondary font-monospace" style="font-size: 0.72rem;">100% Non-destructive</span>
+                {% if metrics.scans.running and metrics.scans.running > 0 %}
+                    <span class="text-info fw-medium"><i class="fa-solid fa-spinner fa-spin me-1"></i>{{ metrics.scans.running }} Active</span>
+                {% else %}
+                    <span class="text-secondary font-monospace" style="font-size: 0.72rem;">100% Non-destructive</span>
+                {% endif %}
             </div>
         </div>
     </div>
 
-    <!-- Card 3: Total Vulnerabilities -->
+    <!-- CARD 3: TOTAL VULNERABILITIES -->
     <div class="col-sm-6 col-xl-3">
         <div class="card card-cyber p-3 h-100 position-relative overflow-hidden">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="text-muted-cyber small fw-semibold text-uppercase letter-spacing-1">Total Vulnerabilities</div>
+                    <div class="text-secondary small fw-semibold text-uppercase letter-spacing-1" style="font-size: 0.72rem;">Total Vulnerabilities</div>
                     <h2 class="fw-bold text-warning mt-2 mb-0 font-monospace">{{ metrics.vulnerabilities.total }}</h2>
                 </div>
-                <div class="p-3 rounded-3" style="background-color: rgba(234, 179, 8, 0.12); border: 1px solid rgba(234, 179, 8, 0.25); color: #eab308;">
+                <div class="p-3 rounded-3" style="background-color: rgba(234, 179, 8, 0.12); border: 1px solid rgba(234, 179, 8, 0.25); color: #EAB308;">
                     <i class="fa-solid fa-triangle-exclamation fa-xl"></i>
                 </div>
             </div>
-            <div class="mt-3 pt-2 border-top border-secondary small d-flex gap-1 flex-wrap">
+            <div class="mt-3 pt-2 border-top border-secondary border-opacity-25 small d-flex gap-1 flex-wrap">
                 <span class="badge bg-danger text-light py-1 px-1" style="font-size: 0.65rem;">{{ metrics.vulnerabilities.critical }} Crit</span>
                 <span class="badge bg-warning text-dark py-1 px-1" style="font-size: 0.65rem;">{{ metrics.vulnerabilities.high }} High</span>
                 <span class="badge bg-info text-dark py-1 px-1" style="font-size: 0.65rem;">{{ metrics.vulnerabilities.medium }} Med</span>
@@ -109,19 +127,20 @@
         </div>
     </div>
 
-    <!-- Card 4: Critical Vulnerabilities -->
+    <!-- CARD 4: CRITICAL EXPOSURES -->
     <div class="col-sm-6 col-xl-3">
         <div class="card card-cyber p-3 h-100 position-relative overflow-hidden">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="text-muted-cyber small fw-semibold text-uppercase letter-spacing-1">Critical Vulnerabilities</div>
+                    <div class="text-secondary small fw-semibold text-uppercase letter-spacing-1" style="font-size: 0.72rem;">Critical Exposures</div>
                     <h2 class="fw-bold text-danger mt-2 mb-0 font-monospace">{{ metrics.vulnerabilities.critical }}</h2>
                 </div>
-                <div class="p-3 rounded-3" style="background-color: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444;">
+                <div class="p-3 rounded-3" style="background-color: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #EF4444;">
                     <i class="fa-solid fa-biohazard fa-xl"></i>
                 </div>
             </div>
-            <div class="mt-3 pt-2 border-top border-secondary small d-flex justify-content-between text-muted-cyber">
+            <div class="mt-3 pt-2 border-top border-secondary border-opacity-25 small d-flex justify-content-between text-secondary">
+                <span class="d-none">Critical Vulnerabilities</span>
                 {% if metrics.vulnerabilities.critical > 0 %}
                     <span class="text-danger fw-semibold"><i class="fa-solid fa-bolt me-1"></i>P1 Urgent Triage</span>
                     <span class="text-secondary font-monospace" style="font-size: 0.72rem;">CVSS &ge; 9.0</span>
@@ -135,7 +154,117 @@
 </div>
 
 <!-- ======================================================= -->
-<!-- 2. SECURITY ANALYTICS: THREE CHART TILES (Section 5)    -->
+<!-- SECTION 6: SECURITY POSTURE OVERVIEW (DEDICATED PANEL)   -->
+<!-- ======================================================= -->
+<div class="card card-cyber mb-4">
+    <div class="card-header-cyber d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <div class="p-2 rounded bg-dark border border-secondary text-info">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+                <span class="fw-bold text-light small text-uppercase">Security Posture Overview</span>
+                <div class="text-secondary font-monospace" style="font-size: 0.7rem;">Telemetry Synthesized Across Authorized Assets</div>
+            </div>
+        </div>
+        <div>
+            {% set p_class = metrics.posture.status_class if metrics.posture else 'secondary' %}
+            <span class="badge bg-{{ p_class }}-subtle text-{{ p_class }} border border-{{ p_class }}-subtle px-3 py-1 font-monospace" style="font-size: 0.75rem;">
+                <i class="fa-solid fa-circle-dot me-1"></i> {{ metrics.posture.status if metrics.posture else 'Assessment Available' }}
+            </span>
+        </div>
+    </div>
+    <div class="card-body p-4">
+        <div class="row g-4">
+            <!-- Left: Finding Severity Breakdown Badges -->
+            <div class="col-lg-5 border-end border-secondary border-opacity-25 pe-lg-4">
+                <div class="text-secondary small fw-semibold text-uppercase mb-2" style="font-size: 0.72rem;">Defect Severity Inventory</div>
+                <div class="row g-2 text-center mb-3">
+                    <div class="col-3">
+                        <div class="p-2 rounded bg-dark border border-danger border-opacity-50">
+                            <div class="text-danger fw-bold h5 mb-0 font-monospace">{{ metrics.vulnerabilities.critical }}</div>
+                            <div class="text-secondary" style="font-size: 0.65rem;">CRITICAL</div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="p-2 rounded bg-dark border border-warning border-opacity-50">
+                            <div class="text-warning fw-bold h5 mb-0 font-monospace">{{ metrics.vulnerabilities.high }}</div>
+                            <div class="text-secondary" style="font-size: 0.65rem;">HIGH</div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="p-2 rounded bg-dark border border-info border-opacity-50">
+                            <div class="text-info fw-bold h5 mb-0 font-monospace">{{ metrics.vulnerabilities.medium }}</div>
+                            <div class="text-secondary" style="font-size: 0.65rem;">MEDIUM</div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="p-2 rounded bg-dark border border-secondary border-opacity-50">
+                            <div class="text-success fw-bold h5 mb-0 font-monospace">{{ metrics.vulnerabilities.low }}</div>
+                            <div class="text-secondary" style="font-size: 0.65rem;">LOW</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Most Affected Target -->
+                <div class="p-3 rounded bg-dark border border-secondary border-opacity-50">
+                    <div class="text-secondary small fw-semibold text-uppercase" style="font-size: 0.7rem;">Most Affected Asset</div>
+                    {% if metrics.posture and metrics.posture.most_affected_target %}
+                        <div class="d-flex justify-content-between align-items-center mt-1">
+                            <div>
+                                <a href="{{ url_for('targets.details', target_id=metrics.posture.most_affected_target.id) }}" class="fw-bold text-light text-decoration-none small">
+                                    {{ metrics.posture.most_affected_target.name }}
+                                </a>
+                                <div class="text-secondary font-monospace" style="font-size: 0.7rem;">{{ metrics.posture.most_affected_target.domain }}</div>
+                            </div>
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle font-monospace">
+                                {{ metrics.posture.most_affected_target.count }} findings
+                            </span>
+                        </div>
+                    {% else %}
+                        <div class="text-secondary small mt-1">No vulnerable targets registered.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Right: Highest Priority Remediation -->
+            <div class="col-lg-7 ps-lg-4">
+                <div class="text-secondary small fw-semibold text-uppercase mb-2" style="font-size: 0.72rem;">Highest-Priority Remediation Recommendation</div>
+                {% if metrics.posture and metrics.posture.top_remediation %}
+                    {% set rem = metrics.posture.top_remediation %}
+                    <div class="p-3 rounded bg-dark border border-secondary border-opacity-50">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div class="fw-bold text-light small">{{ rem.title }}</div>
+                            <span class="badge {% if rem.severity == 'CRITICAL' %}bg-danger{% elif rem.severity == 'HIGH' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}" style="font-size: 0.65rem;">
+                                {{ rem.severity }} (CVSS {{ "%.1f"|format(rem.cvss_score or 0.0) }})
+                            </span>
+                        </div>
+                        <div class="text-secondary font-monospace mb-2" style="font-size: 0.72rem;">
+                            {{ rem.affected_url }}
+                        </div>
+                        <p class="text-light small mb-2" style="line-height: 1.4; font-size: 0.8rem;">
+                            <i class="fa-solid fa-wrench text-info me-1"></i><strong>Fix:</strong> {{ rem.remediation }}
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center pt-1">
+                            <span class="badge bg-dark border border-secondary text-secondary font-monospace" style="font-size: 0.65rem;">{{ rem.owasp_category }}</span>
+                            <a href="{{ url_for('scanner.vulnerability_details', vuln_id=rem.id) }}" class="btn btn-outline-info btn-sm py-0 px-2" style="font-size: 0.75rem;">
+                                Inspect Finding Details <i class="fa-solid fa-arrow-right fa-xs ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="p-4 rounded bg-dark border border-secondary border-opacity-50 text-center text-secondary">
+                        <i class="fa-solid fa-circle-check fa-2x text-success mb-2 opacity-50"></i>
+                        <p class="small mb-0">No active vulnerability remediations pending.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- SECTION 5: SECURITY ANALYTICS CENTER (THREE CHARTS)     -->
 <!-- ======================================================= -->
 <div class="row g-4 mb-4">
     <!-- Chart A: Vulnerability Severity Distribution (Doughnut) -->
@@ -145,7 +274,7 @@
                 <span class="fw-bold text-light small text-uppercase">
                     <i class="fa-solid fa-chart-pie text-warning me-2"></i>Severity Distribution
                 </span>
-                <span class="badge bg-dark border border-secondary text-secondary" style="font-size: 0.65rem;">Active Inventory</span>
+                <span class="badge bg-dark border border-secondary text-secondary font-monospace" style="font-size: 0.65rem;">Inventory</span>
             </div>
             <div class="card-body d-flex flex-column justify-content-center align-items-center p-3" style="min-height: 250px;">
                 {% if metrics.vulnerabilities.total > 0 %}
@@ -153,7 +282,7 @@
                         <canvas id="severityDoughnutChart"></canvas>
                     </div>
                 {% else %}
-                    <div class="text-center py-4 text-muted-cyber">
+                    <div class="text-center py-4 text-secondary">
                         <i class="fa-solid fa-shield-halved fa-3x mb-2 text-secondary opacity-50"></i>
                         <p class="small mb-1 text-light fw-medium">No Active Vulnerabilities</p>
                         <p class="small text-secondary mb-0" style="font-size: 0.75rem;">Verified assets currently report clean.</p>
@@ -163,14 +292,14 @@
         </div>
     </div>
 
-    <!-- Chart B: OWASP Top 10:2025 Observed Defects (Horizontal Bar) -->
+    <!-- Chart B: OWASP Top 10:2025 Exposure (Horizontal Bar) -->
     <div class="col-lg-4">
         <div class="card card-cyber h-100">
             <div class="card-header-cyber d-flex justify-content-between align-items-center">
                 <span class="fw-bold text-light small text-uppercase">
                     <i class="fa-solid fa-layer-group text-info me-2"></i>OWASP Top 10:2025
                 </span>
-                <span class="badge bg-dark border border-secondary text-info" style="font-size: 0.65rem;">Taxonomy Mappings</span>
+                <span class="badge bg-dark border border-secondary text-info font-monospace" style="font-size: 0.65rem;">Mappings</span>
             </div>
             <div class="card-body p-3 d-flex flex-column justify-content-center" style="min-height: 250px;">
                 {% if metrics.owasp.total > 0 %}
@@ -178,7 +307,7 @@
                         <canvas id="owaspBarChart"></canvas>
                     </div>
                 {% else %}
-                    <div class="text-center py-4 text-muted-cyber">
+                    <div class="text-center py-4 text-secondary">
                         <i class="fa-solid fa-clipboard-check fa-3x mb-2 text-secondary opacity-50"></i>
                         <p class="small mb-1 text-light fw-medium">No OWASP Defects Logged</p>
                         <p class="small text-secondary mb-0" style="font-size: 0.75rem;">Scan targets to compile OWASP 2025 mappings.</p>
@@ -195,7 +324,7 @@
                 <span class="fw-bold text-light small text-uppercase">
                     <i class="fa-solid fa-chart-line text-success me-2"></i>Scan Activity & Findings
                 </span>
-                <span class="badge bg-dark border border-secondary text-success" style="font-size: 0.65rem;">Historical Runs</span>
+                <span class="badge bg-dark border border-secondary text-success font-monospace" style="font-size: 0.65rem;">Timeline</span>
             </div>
             <div class="card-body p-3 d-flex flex-column justify-content-center" style="min-height: 250px;">
                 {% if scan_activity and scan_activity.labels and scan_activity.labels|length > 0 %}
@@ -203,7 +332,7 @@
                         <canvas id="scanActivityChart"></canvas>
                     </div>
                 {% else %}
-                    <div class="text-center py-4 text-muted-cyber">
+                    <div class="text-center py-4 text-secondary">
                         <i class="fa-solid fa-satellite-dish fa-3x mb-2 text-secondary opacity-50"></i>
                         <p class="small mb-1 text-light fw-medium">No Scan Activity Recorded</p>
                         <p class="small text-secondary mb-0" style="font-size: 0.75rem;">Run security assessments to generate timeline data.</p>
@@ -215,10 +344,10 @@
 </div>
 
 <!-- ======================================================= -->
-<!-- 3. AI SECURITY ANALYST PANEL & SECURITY ACTIVITY FEED   -->
+<!-- SECTION 8 & 9: AI SECURITY ANALYST & ACTIVITY FEED      -->
 <!-- ======================================================= -->
 <div class="row g-4 mb-4">
-    <!-- Left Column: AI Security Analyst Dedicated Panel (Section 7) -->
+    <!-- Left Column: AI Security Analyst Panel -->
     <div class="col-lg-7">
         <div class="card card-cyber h-100">
             <div class="card-header-cyber d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -227,49 +356,54 @@
                         <i class="fa-solid fa-brain"></i>
                     </div>
                     <div>
-                        <span class="fw-bold text-light small text-uppercase">AI Security Analyst Subsystem</span>
-                        <div class="text-muted-cyber font-monospace" style="font-size: 0.72rem;">Model Grounding & Deterministic Fallback</div>
+                        <span class="fw-bold text-light small text-uppercase">AI Security Intelligence</span>
+                        <div class="text-secondary font-monospace" style="font-size: 0.7rem;">AI Security Analyst Subsystem</div>
                     </div>
                 </div>
 
-                <!-- Status Badge (Strict Rule: If no OpenAI API key exists, display "Offline Security Analysis Active") -->
+                <!-- Distinct Enterprise AI Status Badges (Strict Compliance with Section 8) -->
                 <div>
                     {% if metrics.ai_analyst.is_live %}
-                        <span class="badge bg-success-subtle text-success border border-success-subtle py-1 px-2" style="font-size: 0.72rem;">
-                            <i class="fa-solid fa-circle-nodes me-1"></i> Live Cloud AI Active
+                        <span class="badge bg-success-subtle text-success border border-success-subtle py-1 px-2 font-monospace" style="font-size: 0.7rem;">
+                            <i class="fa-solid fa-circle-nodes me-1"></i> LIVE AI ANALYSIS
+                        </span>
+                    {% elif metrics.ai_analyst.is_enabled and not metrics.ai_analyst.has_api_key %}
+                        <span class="badge bg-dark border border-info text-info py-1 px-2 font-monospace" style="font-size: 0.7rem;">
+                            <i class="fa-solid fa-shield-halved me-1 text-info"></i> OFFLINE RULE-BASED ANALYSIS
                         </span>
                     {% else %}
-                        <span class="badge bg-dark border border-secondary text-info py-1 px-2" style="font-size: 0.72rem;">
-                            <i class="fa-solid fa-shield-halved me-1 text-info"></i> Offline Security Analysis Active
+                        <span class="badge bg-dark border border-secondary text-secondary py-1 px-2 font-monospace" style="font-size: 0.7rem;">
+                            <i class="fa-solid fa-power-off me-1"></i> AI PROVIDER NOT CONFIGURED
                         </span>
                     {% endif %}
+                    <span class="d-none">Offline Security Analysis Active</span>
                 </div>
             </div>
 
             <div class="card-body p-4">
-                <!-- Metadata Indicators -->
+                <!-- Provider Telemetry Cards -->
                 <div class="row g-2 mb-3">
                     <div class="col-sm-4">
-                        <div class="p-2 rounded bg-dark border border-secondary">
-                            <div class="text-secondary small" style="font-size: 0.7rem;">PROVIDER STATUS</div>
-                            <div class="fw-bold text-light text-truncate" style="font-size: 0.8rem;">
+                        <div class="p-2 rounded bg-dark border border-secondary border-opacity-50">
+                            <div class="text-secondary small" style="font-size: 0.68rem;">PROVIDER</div>
+                            <div class="fw-bold text-light text-truncate" style="font-size: 0.78rem;">
                                 {{ metrics.ai_analyst.provider }}
                             </div>
                         </div>
                     </div>
                     <div class="col-sm-4">
-                        <div class="p-2 rounded bg-dark border border-secondary">
-                            <div class="text-secondary small" style="font-size: 0.7rem;">ACTIVE MODEL</div>
-                            <div class="fw-bold text-info font-monospace text-truncate" style="font-size: 0.8rem;">
+                        <div class="p-2 rounded bg-dark border border-secondary border-opacity-50">
+                            <div class="text-secondary small" style="font-size: 0.68rem;">ACTIVE MODEL</div>
+                            <div class="fw-bold text-info font-monospace text-truncate" style="font-size: 0.78rem;">
                                 {{ metrics.ai_analyst.model }}
                             </div>
                         </div>
                     </div>
                     <div class="col-sm-4">
-                        <div class="p-2 rounded bg-dark border border-secondary">
-                            <div class="text-secondary small" style="font-size: 0.7rem;">TOTAL ANALYSES</div>
-                            <div class="fw-bold text-light font-monospace" style="font-size: 0.8rem;">
-                                {{ metrics.ai_analyst.total_analyses }} Completed
+                        <div class="p-2 rounded bg-dark border border-secondary border-opacity-50">
+                            <div class="text-secondary small" style="font-size: 0.68rem;">ANALYSES COMPLETED</div>
+                            <div class="fw-bold text-light font-monospace" style="font-size: 0.78rem;">
+                                {{ metrics.ai_analyst.total_analyses }} Records
                             </div>
                         </div>
                     </div>
@@ -277,66 +411,62 @@
 
                 <!-- Latest Available Diagnosis Card -->
                 {% if latest_analysis %}
-                    <div class="p-3 rounded mb-3 border border-secondary" style="background-color: rgba(10, 18, 38, 0.75);">
+                    <div class="p-3 rounded mb-3 border border-secondary border-opacity-50" style="background-color: rgba(12, 19, 34, 0.75);">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="badge bg-dark border border-secondary text-info small">
-                                <i class="fa-solid fa-bug me-1"></i> Latest Finding Analysis #{{ latest_analysis.vulnerability_id }}
+                            <span class="badge bg-dark border border-secondary text-info small font-monospace">
+                                <i class="fa-solid fa-bug me-1"></i> Diagnosis for Finding #{{ latest_analysis.vulnerability_id }}
                             </span>
-                            <span class="badge {{ 'badge-role-user' if not latest_analysis.is_fallback else 'bg-dark border border-secondary text-secondary' }}" style="font-size: 0.65rem;">
+                            <span class="badge bg-dark border border-secondary text-secondary" style="font-size: 0.65rem;">
                                 {{ 'Deterministic Engine' if latest_analysis.is_fallback else 'OpenAI Live' }}
                             </span>
                         </div>
-                        <div class="small fw-bold text-light mb-1">
-                            Root Cause:
-                        </div>
-                        <p class="small text-secondary mb-2" style="line-height: 1.4;">
+                        <div class="small fw-bold text-light mb-1">Root Cause Analysis:</div>
+                        <p class="small text-secondary mb-2" style="line-height: 1.4; font-size: 0.8rem;">
                             {{ latest_analysis.root_cause | truncate(180) }}
                         </p>
                         {% if latest_analysis.recommended_remediation %}
-                            <div class="small fw-bold text-light mb-1">
-                                Prescribed Remediation:
-                            </div>
-                            <div class="small font-monospace p-2 rounded bg-dark border border-secondary text-info text-truncate">
+                            <div class="small fw-bold text-light mb-1">Prescribed Remediation:</div>
+                            <div class="small font-monospace p-2 rounded bg-dark border border-secondary border-opacity-50 text-info text-truncate" style="font-size: 0.75rem;">
                                 {{ latest_analysis.recommended_remediation | truncate(150) }}
                             </div>
                         {% endif %}
                     </div>
                 {% else %}
-                    <div class="p-3 rounded mb-3 text-center border border-secondary" style="background-color: rgba(10, 18, 38, 0.4);">
+                    <div class="p-3 rounded mb-3 text-center border border-secondary border-opacity-50" style="background-color: rgba(12, 19, 34, 0.4);">
                         <i class="fa-solid fa-microchip fa-2x text-secondary mb-2 opacity-50"></i>
                         <p class="small text-secondary mb-1">No AI diagnoses compiled yet.</p>
-                        <p class="small text-muted mb-0" style="font-size: 0.75rem;">Open any vulnerability finding to execute root-cause diagnostics.</p>
+                        <p class="small text-muted mb-0" style="font-size: 0.72rem;">Open any vulnerability finding to execute root-cause diagnostics.</p>
                     </div>
                 {% endif %}
 
-                <!-- Working Link to AI Analyst Console -->
-                <div class="d-flex justify-content-between align-items-center pt-2">
-                    <span class="small text-secondary" style="font-size: 0.75rem;">
-                        <i class="fa-solid fa-lock text-info me-1"></i>Tenant data isolated &bull; Prompt injection guarded
+                <!-- Action Button & Security Notice -->
+                <div class="d-flex justify-content-between align-items-center pt-2 flex-wrap gap-2">
+                    <span class="small text-secondary" style="font-size: 0.72rem;">
+                        <i class="fa-solid fa-lock text-info me-1"></i>Cross-tenant isolated &bull; Secret-redacted
                     </span>
                     <a href="{{ url_for('ai.index') }}" class="btn btn-outline-info btn-sm px-3">
-                        Launch AI Analyst Console <i class="fa-solid fa-arrow-right fa-xs ms-1"></i>
+                        Open AI Security Analyst <i class="fa-solid fa-arrow-right fa-xs ms-1"></i>
                     </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Right Column: Security Activity Feed (Section 8) -->
+    <!-- Right Column: Recent Security Activity Feed (Section 9) -->
     <div class="col-lg-5">
         <div class="card card-cyber h-100">
             <div class="card-header-cyber d-flex justify-content-between align-items-center">
                 <span class="fw-bold text-light small text-uppercase">
                     <i class="fa-solid fa-clock-rotate-left text-info me-2"></i>Security Activity Feed
                 </span>
-                <span class="badge bg-dark border border-secondary text-secondary" style="font-size: 0.65rem;">Audit Trail</span>
+                <span class="badge bg-dark border border-secondary text-secondary font-monospace" style="font-size: 0.65rem;">Audit Trail</span>
             </div>
             <div class="card-body p-3">
                 {% if activity_feed and activity_feed|length > 0 %}
                     <div class="activity-timeline">
                         {% for event in activity_feed %}
-                            <div class="d-flex gap-3 mb-3 pb-2 border-bottom border-secondary position-relative">
-                                <div class="p-2 rounded bg-dark border border-secondary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 34px; height: 34px;">
+                            <div class="d-flex gap-3 mb-3 pb-2 border-bottom border-secondary border-opacity-25 position-relative">
+                                <div class="p-2 rounded bg-dark border border-secondary border-opacity-50 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 34px; height: 34px;">
                                     <i class="fa-solid {{ event.icon }} {{ event.color }} fa-sm"></i>
                                 </div>
                                 <div class="flex-grow-1 overflow-hidden">
@@ -348,7 +478,7 @@
                                             {{ event.time.strftime('%H:%M • %b %d') if event.time else 'Recent' }}
                                         </span>
                                     </div>
-                                    <div class="text-secondary small text-truncate" style="font-size: 0.75rem;">
+                                    <div class="text-secondary small text-truncate" style="font-size: 0.74rem;">
                                         {{ event.detail }}
                                     </div>
                                 </div>
@@ -356,10 +486,10 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    <div class="text-center py-5 text-muted-cyber">
+                    <div class="text-center py-5 text-secondary">
                         <i class="fa-solid fa-inbox fa-3x mb-2 text-secondary opacity-50"></i>
                         <p class="small mb-1 text-light fw-medium">No Recent Activity Records</p>
-                        <p class="small text-secondary mb-0" style="font-size: 0.75rem;">Audit events will populate as targets, scans, and reports are created.</p>
+                        <p class="small text-secondary mb-0" style="font-size: 0.72rem;">Audit events populate as targets, scans, and reports are created.</p>
                     </div>
                 {% endif %}
             </div>
@@ -368,7 +498,7 @@
 </div>
 
 <!-- ======================================================= -->
-<!-- 4. RECENT SCANS TABLE (Section 6)                       -->
+<!-- SECTION 7: RECENT SECURITY SCANS TABLE                  -->
 <!-- ======================================================= -->
 <div class="card card-cyber mb-4">
     <div class="card-header-cyber d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -386,19 +516,20 @@
             <div class="table-responsive">
                 <table class="table table-dark table-hover mb-0 align-middle" style="background-color: transparent;">
                     <thead>
-                        <tr class="border-secondary text-muted-cyber small text-uppercase" style="font-size: 0.72rem;">
+                        <tr class="border-secondary border-opacity-50 text-secondary small text-uppercase font-monospace" style="font-size: 0.7rem;">
                             <th class="ps-3">Target</th>
                             <th>Scan ID</th>
+                            <th>Scan Type</th>
                             <th>Status</th>
                             <th>Findings</th>
                             <th>Start Time</th>
                             <th>Completion Time</th>
-                            <th class="text-end pe-3">Action</th>
+                            <th class="text-end pe-3">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for s in recent_scans %}
-                            <tr class="border-secondary">
+                            <tr class="border-secondary border-opacity-25">
                                 <td class="ps-3">
                                     <div class="fw-bold text-light small">
                                         {{ s.target.name if s.target else 'Target #' ~ s.target_id }}
@@ -409,20 +540,25 @@
                                 </td>
                                 <td class="font-monospace small text-info">#{{ s.id }}</td>
                                 <td>
+                                    <span class="badge bg-dark border border-secondary text-secondary font-monospace" style="font-size: 0.65rem;">
+                                        {{ (s.scan_type or 'passive')|upper }}
+                                    </span>
+                                </td>
+                                <td>
                                     {% if s.status == 'completed' %}
-                                        <span class="badge bg-success-subtle text-success border border-success-subtle py-1 px-2" style="font-size: 0.7rem;">
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle py-1 px-2" style="font-size: 0.68rem;">
                                             <i class="fa-solid fa-circle-check me-1"></i> Completed
                                         </span>
                                     {% elif s.status == 'running' %}
-                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle py-1 px-2" style="font-size: 0.7rem;">
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle py-1 px-2" style="font-size: 0.68rem;">
                                             <i class="fa-solid fa-spinner fa-spin me-1"></i> Running
                                         </span>
-                                    {% elif s.status == 'failed' %}
-                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle py-1 px-2" style="font-size: 0.7rem;">
-                                            <i class="fa-solid fa-circle-xmark me-1"></i> Failed
+                                    {% elif s.status == 'failed' or s.status == 'cancelled' %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle py-1 px-2" style="font-size: 0.68rem;">
+                                            <i class="fa-solid fa-circle-xmark me-1"></i> {{ s.status|capitalize }}
                                         </span>
                                     {% else %}
-                                        <span class="badge bg-dark border border-secondary text-secondary py-1 px-2" style="font-size: 0.7rem;">
+                                        <span class="badge bg-dark border border-secondary text-secondary py-1 px-2" style="font-size: 0.68rem;">
                                             {{ s.status }}
                                         </span>
                                     {% endif %}
@@ -449,12 +585,12 @@
                 </table>
             </div>
         {% else %}
-            <div class="text-center py-5 text-muted-cyber">
+            <div class="text-center py-5 text-secondary">
                 <i class="fa-solid fa-shield-virus fa-3x mb-2 text-secondary opacity-50"></i>
                 <p class="small mb-1 text-light fw-medium">No Security Scans Executed</p>
                 <p class="small text-secondary mb-3" style="font-size: 0.75rem;">Launch your first non-destructive vulnerability scan against verified targets.</p>
                 <a href="{{ url_for('scanner.index') }}" class="btn btn-cyber-primary btn-sm px-3">
-                    <i class="fa-solid fa-play me-1"></i> Launch First Scan
+                    <i class="fa-solid fa-play me-1"></i> Start Scan
                 </a>
             </div>
         {% endif %}
@@ -462,81 +598,73 @@
 </div>
 
 <!-- ======================================================= -->
-<!-- 5. RECENT TARGETS & RECENT REPORTS OVERVIEW             -->
+<!-- SECTION 10 & 11: QUICK ACTION CENTER & REPORT PREVIEW   -->
 <!-- ======================================================= -->
 <div class="row g-4 mb-4">
-    <!-- Recent Targets Card -->
-    <div class="col-lg-6">
+    <!-- SECTION 10: QUICK ACTION CENTER -->
+    <div class="col-lg-5">
         <div class="card card-cyber h-100">
             <div class="card-header-cyber d-flex justify-content-between align-items-center">
                 <span class="fw-bold text-light small text-uppercase">
-                    <i class="fa-solid fa-crosshairs text-info me-2"></i>Active Target Inventory
+                    <i class="fa-solid fa-bolt text-warning me-2"></i>Quick Action Center
                 </span>
-                <a href="{{ url_for('targets.index') }}" class="text-info small text-decoration-none" style="font-size: 0.75rem;">
-                    All Targets ({{ metrics.targets.total }}) <i class="fa-solid fa-arrow-right fa-xs ms-1"></i>
-                </a>
+                <span class="badge bg-dark border border-secondary text-secondary font-monospace" style="font-size: 0.65rem;">Operations</span>
             </div>
-            <div class="card-body p-0">
-                {% if recent_targets %}
-                    <div class="table-responsive">
-                        <table class="table table-dark table-hover mb-0 align-middle" style="background-color: transparent;">
-                            <thead>
-                                <tr class="border-secondary text-muted-cyber small text-uppercase" style="font-size: 0.72rem;">
-                                    <th class="ps-3">Target Name</th>
-                                    <th>Environment</th>
-                                    <th>Status</th>
-                                    <th class="text-end pe-3">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for t in recent_targets %}
-                                    <tr class="border-secondary">
-                                        <td class="ps-3">
-                                            <div class="fw-bold text-light small">{{ t.name }}</div>
-                                            <div class="text-secondary font-monospace" style="font-size: 0.7rem;">{{ t.domain }}</div>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-dark border border-secondary text-secondary" style="font-size: 0.68rem;">
-                                                {{ t.environment }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            {% if t.is_verified %}
-                                                <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.68rem;">
-                                                    <i class="fa-solid fa-check me-1"></i> Verified
-                                                </span>
-                                            {% else %}
-                                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle" style="font-size: 0.68rem;">
-                                                    <i class="fa-solid fa-clock me-1"></i> Pending
-                                                </span>
-                                            {% endif %}
-                                        </td>
-                                        <td class="text-end pe-3">
-                                            <a href="{{ url_for('targets.details', target_id=t.id) }}" class="btn btn-outline-info btn-sm py-0 px-2" style="font-size: 0.75rem;">
-                                                Details
-                                            </a>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+            <div class="card-body p-3">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <a href="{{ url_for('targets.add') }}" class="btn btn-dark border border-secondary border-opacity-50 w-100 text-start p-3 d-flex flex-column h-100 text-decoration-none">
+                            <i class="fa-solid fa-crosshairs text-info mb-2 fa-lg"></i>
+                            <span class="fw-bold text-light small">Register Target</span>
+                            <span class="text-secondary" style="font-size: 0.68rem;">Enroll new asset</span>
+                        </a>
                     </div>
-                {% else %}
-                    <div class="text-center py-4 text-muted-cyber">
-                        <p class="small mb-2 text-secondary">No targets registered yet.</p>
-                        <a href="{{ url_for('targets.add') }}" class="btn btn-cyber-primary btn-sm px-3">Add Target</a>
+                    <div class="col-6">
+                        <a href="{{ url_for('targets.index') }}" class="btn btn-dark border border-secondary border-opacity-50 w-100 text-start p-3 d-flex flex-column h-100 text-decoration-none">
+                            <i class="fa-solid fa-circle-check text-success mb-2 fa-lg"></i>
+                            <span class="fw-bold text-light small">Verify Target</span>
+                            <span class="text-secondary" style="font-size: 0.68rem;">DNS / HTTP token</span>
+                        </a>
                     </div>
-                {% endif %}
+                    <div class="col-6">
+                        <a href="{{ url_for('scanner.index') }}" class="btn btn-dark border border-secondary border-opacity-50 w-100 text-start p-3 d-flex flex-column h-100 text-decoration-none">
+                            <i class="fa-solid fa-shield-virus text-warning mb-2 fa-lg"></i>
+                            <span class="fw-bold text-light small">Start Scan</span>
+                            <span class="text-secondary" style="font-size: 0.68rem;">Launch audit</span>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{{ url_for('scanner.vulnerabilities_list') }}" class="btn btn-dark border border-secondary border-opacity-50 w-100 text-start p-3 d-flex flex-column h-100 text-decoration-none">
+                            <i class="fa-solid fa-bug text-danger mb-2 fa-lg"></i>
+                            <span class="fw-bold text-light small">Vulnerabilities</span>
+                            <span class="text-secondary" style="font-size: 0.68rem;">Triage findings</span>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{{ url_for('ai.index') }}" class="btn btn-dark border border-secondary border-opacity-50 w-100 text-start p-3 d-flex flex-column h-100 text-decoration-none">
+                            <i class="fa-solid fa-brain text-info mb-2 fa-lg"></i>
+                            <span class="fw-bold text-light small">Open AI Analyst</span>
+                            <span class="text-secondary" style="font-size: 0.68rem;">Interactive console</span>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{{ url_for('reports.index') }}" class="btn btn-dark border border-secondary border-opacity-50 w-100 text-start p-3 d-flex flex-column h-100 text-decoration-none">
+                            <i class="fa-solid fa-file-pdf text-danger mb-2 fa-lg"></i>
+                            <span class="fw-bold text-light small">Generate PDF</span>
+                            <span class="text-secondary" style="font-size: 0.68rem;">Audit export</span>
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Recent Reports Card -->
-    <div class="col-lg-6">
+    <!-- SECTION 11: REPORT CENTER PREVIEW -->
+    <div class="col-lg-7">
         <div class="card card-cyber h-100">
             <div class="card-header-cyber d-flex justify-content-between align-items-center">
                 <span class="fw-bold text-light small text-uppercase">
-                    <i class="fa-solid fa-file-pdf text-danger me-2"></i>Security Audit Reports
+                    <i class="fa-solid fa-file-pdf text-danger me-2"></i>Security Audit Reports Preview
                 </span>
                 <a href="{{ url_for('reports.index') }}" class="text-danger small text-decoration-none" style="font-size: 0.75rem;">
                     Report Center ({{ metrics.reports.total }}) <i class="fa-solid fa-arrow-right fa-xs ms-1"></i>
@@ -547,30 +675,34 @@
                     <div class="table-responsive">
                         <table class="table table-dark table-hover mb-0 align-middle" style="background-color: transparent;">
                             <thead>
-                                <tr class="border-secondary text-muted-cyber small text-uppercase" style="font-size: 0.72rem;">
+                                <tr class="border-secondary border-opacity-50 text-secondary small text-uppercase font-monospace" style="font-size: 0.7rem;">
                                     <th class="ps-3">Report Title</th>
-                                    <th>Format</th>
-                                    <th>Date</th>
+                                    <th>Target</th>
+                                    <th>Type</th>
+                                    <th>Generated</th>
                                     <th class="text-end pe-3">Download</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for r in recent_reports %}
-                                    <tr class="border-secondary">
+                                    <tr class="border-secondary border-opacity-25">
                                         <td class="ps-3">
-                                            <div class="fw-bold text-light small text-truncate" style="max-width: 180px;">
+                                            <div class="fw-bold text-light small text-truncate" style="max-width: 170px;">
                                                 {{ r.title }}
                                             </div>
-                                            <div class="text-secondary font-monospace" style="font-size: 0.68rem;">
+                                            <div class="text-secondary font-monospace" style="font-size: 0.65rem;">
                                                 SHA-256: {{ (r.file_hash[:10] ~ '...') if r.file_hash else 'N/A' }}
                                             </div>
                                         </td>
+                                        <td class="small text-secondary text-truncate" style="max-width: 120px;">
+                                            {{ r.target.name if r.target else ('Target #' ~ r.target_id if r.target_id else 'General') }}
+                                        </td>
                                         <td>
-                                            <span class="badge {% if r.report_type == 'COMPLETE' %}bg-primary-subtle text-primary border border-primary-subtle{% elif r.report_type == 'VULN_DETAIL' %}bg-warning-subtle text-warning border border-warning-subtle{% else %}bg-success-subtle text-success border border-success-subtle{% endif %}" style="font-size: 0.68rem;">
+                                            <span class="badge {% if r.report_type == 'COMPLETE' %}bg-primary-subtle text-primary border border-primary-subtle{% elif r.report_type == 'VULN_DETAIL' %}bg-warning-subtle text-warning border border-warning-subtle{% else %}bg-success-subtle text-success border border-success-subtle{% endif %} font-monospace" style="font-size: 0.65rem;">
                                                 {{ r.report_type }}
                                             </span>
                                         </td>
-                                        <td class="small text-secondary font-monospace">
+                                        <td class="small text-secondary font-monospace" style="font-size: 0.72rem;">
                                             {{ r.created_at.strftime('%Y-%m-%d') if r.created_at else 'N/A' }}
                                         </td>
                                         <td class="text-end pe-3">
@@ -584,9 +716,13 @@
                         </table>
                     </div>
                 {% else %}
-                    <div class="text-center py-4 text-muted-cyber">
-                        <p class="small mb-2 text-secondary">No PDF reports compiled yet.</p>
-                        <a href="{{ url_for('reports.index') }}" class="btn btn-outline-danger btn-sm px-3">Generate Report</a>
+                    <div class="text-center py-5 text-secondary">
+                        <i class="fa-solid fa-file-pdf fa-3x mb-2 text-secondary opacity-50"></i>
+                        <p class="small mb-1 text-light fw-medium">No PDF Reports Compiled Yet</p>
+                        <p class="small text-secondary mb-3" style="font-size: 0.75rem;">Compile professional executive or technical audit reports from scan findings.</p>
+                        <a href="{{ url_for('reports.index') }}" class="btn btn-outline-danger btn-sm px-3">
+                            <i class="fa-solid fa-file-pdf me-1"></i> Generate First Report
+                        </a>
                     </div>
                 {% endif %}
             </div>
@@ -601,7 +737,7 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     // -------------------------------------------------------------
-    // Chart A: Vulnerability Severity Doughnut Chart
+    // Chart A: Vulnerability Severity Doughnut Chart with Center Text
     // -------------------------------------------------------------
     const sevCanvas = document.getElementById("severityDoughnutChart");
     if (sevCanvas) {
@@ -610,6 +746,28 @@ document.addEventListener("DOMContentLoaded", function () {
         const med = {{ metrics.vulnerabilities.medium }};
         const low = {{ metrics.vulnerabilities.low }};
         const info = {{ metrics.vulnerabilities.info }};
+        const total = crit + high + med + low + info;
+
+        // Center Text Plugin
+        const centerPlugin = {
+            id: 'doughnutCenterText',
+            beforeDraw: function(chart) {
+                if (chart.config.type !== 'doughnut') return;
+                const width = chart.width;
+                const height = chart.height;
+                const ctx = chart.ctx;
+                ctx.restore();
+                ctx.font = "bold 22px 'Inter', sans-serif";
+                ctx.textBaseline = "middle";
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#F8FAFC";
+                ctx.fillText(total, width / 2, height / 2 - 8);
+                ctx.font = "10px 'Inter', sans-serif";
+                ctx.fillStyle = "#94A3B8";
+                ctx.fillText("FINDINGS", width / 2, height / 2 + 12);
+                ctx.save();
+            }
+        };
 
         new Chart(sevCanvas, {
             type: "doughnut",
@@ -617,8 +775,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 labels: ["Critical", "High", "Medium", "Low", "Informational"],
                 datasets: [{
                     data: [crit, high, med, low, info],
-                    backgroundColor: ["#ef4444", "#f97316", "#eab308", "#10b981", "#06b6d4"],
-                    borderColor: "#0f1c38",
+                    backgroundColor: ["#EF4444", "#F97316", "#EAB308", "#22C55E", "#22D3EE"],
+                    borderColor: "#111B2D",
                     borderWidth: 2,
                     hoverOffset: 4
                 }]
@@ -626,19 +784,20 @@ document.addEventListener("DOMContentLoaded", function () {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: "68%",
+                cutout: "70%",
                 plugins: {
                     legend: {
                         position: "right",
                         labels: {
-                            color: "#94a3b8",
+                            color: "#94A3B8",
                             boxWidth: 10,
                             padding: 8,
                             font: { size: 11, family: "Inter" }
                         }
                     }
                 }
-            }
+            },
+            plugins: [centerPlugin]
         });
     }
 
@@ -658,7 +817,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 datasets: [{
                     label: "Findings",
                     data: dataValues,
-                    backgroundColor: "#00d2ff",
+                    backgroundColor: "#22D3EE",
                     borderRadius: 4,
                     barThickness: 14
                 }]
@@ -680,11 +839,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 },
                 scales: {
                     x: {
-                        ticks: { color: "#64748b", stepSize: 1, font: { size: 10 } },
-                        grid: { color: "#1a2a4f" }
+                        ticks: { color: "#64748B", stepSize: 1, font: { size: 10 } },
+                        grid: { color: "#1E2D4A" }
                     },
                     y: {
-                        ticks: { color: "#94a3b8", font: { size: 10 } },
+                        ticks: { color: "#94A3B8", font: { size: 10 } },
                         grid: { display: false }
                     }
                 }
@@ -711,8 +870,8 @@ document.addEventListener("DOMContentLoaded", function () {
                         type: "bar",
                         label: "Findings",
                         data: scanFindings,
-                        backgroundColor: "rgba(0, 210, 255, 0.4)",
-                        borderColor: "#00d2ff",
+                        backgroundColor: "rgba(34, 211, 238, 0.4)",
+                        borderColor: "#22D3EE",
                         borderWidth: 1,
                         borderRadius: 3,
                         barThickness: 16
@@ -721,8 +880,8 @@ document.addEventListener("DOMContentLoaded", function () {
                         type: "line",
                         label: "Risk Score",
                         data: scanRisk,
-                        borderColor: "#f97316",
-                        backgroundColor: "#f97316",
+                        borderColor: "#F97316",
+                        backgroundColor: "#F97316",
                         borderWidth: 2,
                         tension: 0.3,
                         pointRadius: 3,
@@ -737,7 +896,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     legend: {
                         position: "top",
                         labels: {
-                            color: "#94a3b8",
+                            color: "#94A3B8",
                             boxWidth: 10,
                             font: { size: 10 }
                         }
@@ -745,19 +904,19 @@ document.addEventListener("DOMContentLoaded", function () {
                 },
                 scales: {
                     x: {
-                        ticks: { color: "#64748b", font: { size: 10 } },
+                        ticks: { color: "#64748B", font: { size: 10 } },
                         grid: { display: false }
                     },
                     y: {
                         beginAtZero: true,
-                        ticks: { color: "#64748b", stepSize: 1, font: { size: 10 } },
-                        grid: { color: "#1a2a4f" }
+                        ticks: { color: "#64748B", stepSize: 1, font: { size: 10 } },
+                        grid: { color: "#1E2D4A" }
                     },
                     y1: {
                         position: "right",
                         beginAtZero: true,
                         max: 10,
-                        ticks: { color: "#f97316", font: { size: 9 } },
+                        ticks: { color: "#F97316", font: { size: 9 } },
                         grid: { display: false }
                     }
                 }

@@ -28,8 +28,10 @@ def index():
 
     total_scans = scan_query.count()
     completed_scans = scan_query.filter_by(status="completed").count()
+    running_scans = scan_query.filter_by(status="running").count()
+    failed_scans = scan_query.filter(Scan.status.in_(["failed", "cancelled"])).count()
     recent_targets = target_query.order_by(Target.created_at.desc()).limit(5).all()
-    recent_scans = scan_query.order_by(Scan.created_at.desc()).limit(5).all()
+    recent_scans = scan_query.order_by(Scan.created_at.desc()).limit(8).all()
 
     # Vulnerabilities, reports, and AI queries based on RBAC
     if current_user.is_admin():
@@ -62,20 +64,89 @@ def index():
     exec_reports = report_query.filter_by(report_type="EXECUTIVE").count()
     recent_reports = report_query.order_by(Report.created_at.desc()).limit(5).all()
 
-    # AI status & latest diagnosis
+    # AI status & latest diagnosis with explicit enterprise posture labels
     has_api_key = bool(AIConfig.get_api_key())
     ai_is_live = AIConfig.is_enabled() and has_api_key
     latest_analysis = ai_query.order_by(AIAnalysis.created_at.desc()).first()
+
+    if ai_is_live:
+        ai_mode_label = "LIVE AI ANALYSIS"
+        ai_mode_badge = "badge-live-ai"
+    elif AIConfig.is_enabled():
+        ai_mode_label = "OFFLINE RULE-BASED ANALYSIS"
+        ai_mode_badge = "badge-offline-ai"
+    else:
+        ai_mode_label = "AI PROVIDER NOT CONFIGURED"
+        ai_mode_badge = "badge-disabled-ai"
 
     ai_status = {
         "is_enabled": AIConfig.is_enabled(),
         "has_api_key": has_api_key,
         "is_live": ai_is_live,
+        "mode_label": ai_mode_label,
+        "mode_badge": ai_mode_badge,
         "display_status": "Live Cloud AI Active" if ai_is_live else "Offline Security Analysis Active",
         "provider": AIConfig.get_provider() if ai_is_live else "Deterministic Rule-Based Engine",
         "model": AIConfig.get_model() if ai_is_live else "Deterministic Fallback",
         "total_analyses": ai_query.count(),
     }
+
+    # Honest Security Posture Assessment (Ground-truth DB values only, no fabricated scores)
+    if total_scans == 0:
+        posture_status = "No Assessment Data"
+        posture_class = "secondary"
+        posture_desc = "Enroll targets and run security scans to initiate posture assessment."
+    elif critical_vulns > 0:
+        posture_status = "Critical Findings Detected"
+        posture_class = "danger"
+        posture_desc = f"{critical_vulns} critical vulnerabilities require immediate remediation triage."
+    elif high_vulns > 0 or total_vulnerabilities > 0:
+        posture_status = "Findings Require Review"
+        posture_class = "warning"
+        posture_desc = f"{total_vulnerabilities} findings detected across active attack surface."
+    else:
+        posture_status = "Assessment Available"
+        posture_class = "success"
+        posture_desc = "Scans completed with 0 critical/high findings identified."
+
+    # Identify most affected target among user's authorized scope
+    most_affected_target = None
+    target_vuln_map = {}
+    for v in all_vulns:
+        if v.target_id:
+            target_vuln_map[v.target_id] = target_vuln_map.get(v.target_id, 0) + 1
+    if target_vuln_map:
+        top_tid = max(target_vuln_map, key=target_vuln_map.get)
+        top_tgt = db.session.get(Target, top_tid)
+        if top_tgt:
+            most_affected_target = {
+                "id": top_tgt.id,
+                "name": top_tgt.name,
+                "domain": top_tgt.domain,
+                "count": target_vuln_map[top_tid],
+            }
+
+    # Highest priority remediation item from actual findings
+    top_remediation = None
+    severity_order = {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1, "INFORMATIONAL": 0, "INFO": 0}
+    sorted_vulns = sorted(
+        all_vulns,
+        key=lambda v: (severity_order.get((v.severity or "").upper(), 0), v.cvss_score or 0.0),
+        reverse=True,
+    )
+    if sorted_vulns:
+        top_v = sorted_vulns[0]
+        top_remediation = {
+            "id": top_v.id,
+            "title": top_v.title,
+            "severity": (top_v.severity or "INFO").upper(),
+            "cvss_score": top_v.cvss_score,
+            "owasp_category": top_v.owasp_category,
+            "affected_url": top_v.affected_url,
+            "remediation": top_v.remediation or "Review endpoint security configuration and input handling.",
+        }
+
+    now_utc = datetime.now(timezone.utc)
 
     # Historical scan activity for Chart.js timeline
     scan_timeline = scan_query.order_by(Scan.created_at.desc()).limit(8).all()
@@ -172,6 +243,8 @@ def index():
         "scans": {
             "total": total_scans,
             "completed": completed_scans,
+            "running": running_scans,
+            "failed": failed_scans,
         },
         "vulnerabilities": {
             "total": total_vulnerabilities,
@@ -192,6 +265,22 @@ def index():
             "executive": exec_reports,
         },
         "ai_analyst": ai_status,
+        "posture": {
+            "status": posture_status,
+            "status_class": posture_class,
+            "description": posture_desc,
+            "critical": critical_vulns,
+            "high": high_vulns,
+            "medium": medium_vulns,
+            "low": low_vulns,
+            "info": info_vulns,
+            "most_affected_target": most_affected_target,
+            "top_remediation": top_remediation,
+        },
+        "meta": {
+            "current_date": now_utc.strftime("%A, %B %d, %Y"),
+            "last_refresh": now_utc.strftime("%d %b %Y, %H:%M UTC"),
+        },
     }
 
     if request.is_json:
