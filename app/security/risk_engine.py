@@ -17,6 +17,20 @@ class CVSS4RiskEngine:
     # Base Metrics
     REQUIRED_BASE_METRICS = ["AV", "AC", "AT", "PR", "UI", "VC", "VI", "VA", "SC", "SI", "SA"]
 
+    # Canonical Official CVSS v4.0 Metric Serialization Order (FIRST Specification Section 6)
+    CANONICAL_ORDER = [
+        # Base Metrics (Mandatory)
+        "AV", "AC", "AT", "PR", "UI", "VC", "VI", "VA", "SC", "SI", "SA",
+        # Threat Metric
+        "E",
+        # Environmental Security Requirements
+        "CR", "IR", "AR",
+        # Environmental Modified Base Metrics
+        "MAV", "MAC", "MAT", "MPR", "MUI", "MVC", "MVI", "MVA", "MSC", "MSI", "MSA",
+        # Supplemental Metrics (Informational context)
+        "S", "AU", "R", "V", "RE", "U",
+    ]
+
     # Metric Value Levels for Severity Distances (FIRST specification)
     AV_LEVELS = {"N": 0.0, "A": 0.1, "L": 0.2, "P": 0.3}
     PR_LEVELS = {"N": 0.0, "L": 0.1, "H": 0.2}
@@ -39,8 +53,9 @@ class CVSS4RiskEngine:
 
     E_LEVELS  = {"U": 0.2, "P": 0.1, "A": 0.0}
 
-    # Valid Metric Value Sets
+    # Valid Metric Value Sets (FIRST CVSS v4.0 Official Specification)
     METRIC_VALUES = {
+        # Base Metrics (Required, no 'X', Base SI/SA do NOT accept 'S')
         "AV": {"N", "A", "L", "P"},
         "AC": {"L", "H"},
         "AT": {"N", "P"},
@@ -50,15 +65,15 @@ class CVSS4RiskEngine:
         "VI": {"H", "L", "N"},
         "VA": {"H", "L", "N"},
         "SC": {"H", "L", "N"},
-        "SI": {"S", "H", "L", "N"},
-        "SA": {"S", "H", "L", "N"},
-        # Threat
+        "SI": {"H", "L", "N"},
+        "SA": {"H", "L", "N"},
+        # Threat Metric
         "E": {"X", "A", "P", "U"},
-        # Environmental
+        # Environmental Security Requirements
         "CR": {"X", "H", "M", "L"},
         "IR": {"X", "H", "M", "L"},
         "AR": {"X", "H", "M", "L"},
-        # Modified Base
+        # Modified Base Metrics (MSI and MSA support the additional Safety value 'S')
         "MAV": {"X", "N", "A", "L", "P"},
         "MAC": {"X", "L", "H"},
         "MAT": {"X", "N", "P"},
@@ -70,6 +85,13 @@ class CVSS4RiskEngine:
         "MSC": {"X", "H", "L", "N"},
         "MSI": {"X", "S", "H", "L", "N"},
         "MSA": {"X", "S", "H", "L", "N"},
+        # Supplemental Metrics (Informational context, do not modify score)
+        "S": {"X", "N", "P"},
+        "AU": {"X", "N", "Y"},
+        "R": {"X", "A", "U", "I"},
+        "V": {"X", "D", "C"},
+        "RE": {"X", "L", "M", "H"},
+        "U": {"X", "Clear", "Green", "Amber", "Red", "CLEAR", "GREEN", "AMBER", "RED"},
     }
 
     # Max Severity Distances in EQs MacroVectors (FIRST Specification)
@@ -234,6 +256,11 @@ class CVSS4RiskEngine:
         if mod_key in sel and sel[mod_key] and sel[mod_key] != "X":
             return sel[mod_key]
 
+        # Direct Modified metric query (e.g. MAV, MSI): if 'X' or omitted, resolves to Base metric
+        if metric.startswith("M") and metric[1:] in cls.REQUIRED_BASE_METRICS:
+            if val is None or val == "X":
+                return sel.get(metric[1:])
+
         return val
 
     @classmethod
@@ -323,6 +350,7 @@ class CVSS4RiskEngine:
 
         parts = clean_vec[9:].split("/")
         metrics = {}
+        seen_metrics = set()
         for p in parts:
             if not p:
                 continue
@@ -331,24 +359,40 @@ class CVSS4RiskEngine:
             k, v = p.split(":", 1)
             k_clean = k.strip()
             v_clean = v.strip()
-            # Metrics in CVSS v4.0 must be uppercase
-            if k_clean != k_clean.upper() or v_clean != v_clean.upper():
+
+            # Reject duplicate metrics
+            if k_clean in seen_metrics:
+                return False, f"Duplicate metric '{k_clean}' in vector", {}
+            seen_metrics.add(k_clean)
+
+            # Metrics in CVSS v4.0 must be uppercase (except Provider Urgency U values which can be title/upper)
+            if k_clean != k_clean.upper():
                 return False, f"Metric tags and values must be uppercase: '{p}'", {}
+
+            if k_clean != "U":
+                if v_clean != v_clean.upper():
+                    return False, f"Metric tags and values must be uppercase: '{p}'", {}
+            else:
+                if v_clean not in cls.METRIC_VALUES["U"]:
+                    return False, f"Invalid value '{v_clean}' for metric 'U'", {}
+
+            # Reject unrecognized metric keys
+            if k_clean not in cls.METRIC_VALUES:
+                return False, f"Unknown CVSS v4.0 metric '{k_clean}'", {}
+
+            # Validate metric value against allowed set
+            if v_clean not in cls.METRIC_VALUES[k_clean]:
+                return False, f"Invalid value '{v_clean}' for metric '{k_clean}'", {}
+
             metrics[k_clean] = v_clean
 
-        # Check required base metrics
+        # Check required base metrics (all 11 must be present)
         for req in cls.REQUIRED_BASE_METRICS:
             if req not in metrics:
                 return False, f"Missing required CVSS v4.0 metric '{req}'", {}
             val = metrics[req]
             if val not in cls.METRIC_VALUES[req]:
                 return False, f"Invalid value '{val}' for metric '{req}'", {}
-
-        # Validate optional threat, environmental, and modified metrics if present
-        for k, val in metrics.items():
-            if k in cls.METRIC_VALUES:
-                if val not in cls.METRIC_VALUES[k]:
-                    return False, f"Invalid value '{val}' for metric '{k}'", {}
 
         return True, "Valid CVSS v4.0 vector", metrics
 
@@ -503,25 +547,74 @@ class CVSS4RiskEngine:
             return "Critical"
 
     @classmethod
-    def build_vector_string(cls, metrics: dict) -> str:
-        """Construct canonical CVSS:4.0 vector string."""
+    def get_score_nomenclature(cls, metrics: dict) -> str:
+        """Determine CVSS v4.0 score nomenclature prefix (CVSS-B, CVSS-BT, CVSS-BE, CVSS-BTE).
+        
+        Per FIRST CVSS v4.0 Specification Section 1.1:
+        - CVSS-B: Base metrics only (Threat and Environmental are omitted or Not Defined X).
+        - CVSS-BT: Base + Threat metrics specified (Threat != X and Environmental == X/omitted).
+        - CVSS-BE: Base + Environmental metrics specified (Environmental != X and Threat == X/omitted).
+        - CVSS-BTE: Base + Threat + Environmental metrics specified (both Threat != X and Environmental != X).
+        Supplemental metrics do not alter score nomenclature.
+        """
+        has_threat = "E" in metrics and metrics["E"] not in (None, "X")
+
+        env_keys = [
+            "CR", "IR", "AR",
+            "MAV", "MAC", "MAT", "MPR", "MUI", "MVC", "MVI", "MVA", "MSC", "MSI", "MSA",
+        ]
+        has_env = any(k in metrics and metrics[k] not in (None, "X") for k in env_keys)
+
+        if has_threat and has_env:
+            return "CVSS-BTE"
+        elif has_threat:
+            return "CVSS-BT"
+        elif has_env:
+            return "CVSS-BE"
+        else:
+            return "CVSS-B"
+
+    @classmethod
+    def get_nomenclature(cls, metrics: dict) -> str:
+        """Alias for get_score_nomenclature."""
+        return cls.get_score_nomenclature(metrics)
+
+    @classmethod
+    def build_vector_string(cls, metrics: dict, preserve_x: bool = True) -> str:
+        """Construct canonical CVSS:4.0 vector string in official specification order.
+        
+        Args:
+            metrics: Dictionary of metric key-value pairs.
+            preserve_x: If True (default), metrics explicitly set to 'X' in metrics
+                        dict are retained in the output string. If False, 'X' metrics
+                        are omitted.
+        """
         parts = ["CVSS:4.0"]
         # Required base metrics first
         for k in cls.REQUIRED_BASE_METRICS:
             v = metrics.get(k, "N")
             parts.append(f"{k}:{v}")
-        # Optional Threat metrics
-        if "E" in metrics and metrics["E"] != "X":
-            parts.append(f"E:{metrics['E']}")
-        # Optional Environmental Security Requirements
-        for env_k in ["CR", "IR", "AR"]:
-            if env_k in metrics and metrics[env_k] != "X":
-                parts.append(f"{env_k}:{metrics[env_k]}")
-        # Optional Modified metrics
-        for mod_k in ["MAV", "MAC", "MAT", "MPR", "MUI", "MVC", "MVI", "MVA", "MSC", "MSI", "MSA"]:
-            if mod_k in metrics and metrics[mod_k] != "X":
-                parts.append(f"{mod_k}:{metrics[mod_k]}")
+
+        # Optional metrics in canonical order: Threat -> Environmental -> Supplemental
+        for k in cls.CANONICAL_ORDER:
+            if k in cls.REQUIRED_BASE_METRICS:
+                continue
+            if k in metrics:
+                val = metrics[k]
+                if val == "X" and not preserve_x:
+                    continue
+                parts.append(f"{k}:{val}")
+
         return "/".join(parts)
+
+    @classmethod
+    def normalize_vector(cls, vector_str: str, preserve_x: bool = True) -> tuple[bool, str, str]:
+        """Validate and return canonically ordered CVSS:4.0 vector string."""
+        ok, msg, metrics = cls.validate_vector(vector_str)
+        if not ok:
+            return False, msg, ""
+        canonical_vec = cls.build_vector_string(metrics, preserve_x=preserve_x)
+        return True, "Vector normalized successfully", canonical_vec
 
     @classmethod
     def score_vulnerability(
@@ -530,7 +623,7 @@ class CVSS4RiskEngine:
         category: str = "",
         custom_metrics: Optional[dict] = None,
     ) -> dict:
-        """Produce CVSS v4.0 vector, numeric score, severity, and factor explanations."""
+        """Produce CVSS v4.0 vector, numeric score, severity, nomenclature, and factor explanations."""
         name_lower = vulnerability_name.lower()
         cat_lower = category.lower()
 
@@ -576,6 +669,7 @@ class CVSS4RiskEngine:
         score = cls.calculate_score(chosen_metrics)
         severity = cls.get_severity_rating(score)
         mv = cls.compute_macro_vector(chosen_metrics)
+        nomenclature = cls.get_score_nomenclature(chosen_metrics)
 
         factors = {
             "attack_vector": chosen_metrics.get("AV"),
@@ -588,6 +682,7 @@ class CVSS4RiskEngine:
             "vulnerable_system_availability": chosen_metrics.get("VA"),
             "subsequent_system_impact": f"SC:{chosen_metrics.get('SC')} SI:{chosen_metrics.get('SI')} SA:{chosen_metrics.get('SA')}",
             "macro_vector": mv,
+            "score_nomenclature": nomenclature,
             "rationale": explanation,
         }
 
@@ -596,6 +691,7 @@ class CVSS4RiskEngine:
             "cvss_vector": vector_str,
             "cvss_score": score,
             "severity_rating": severity,
+            "score_nomenclature": nomenclature,
             "macro_vector": mv,
             "scoring_factors": factors,
         }

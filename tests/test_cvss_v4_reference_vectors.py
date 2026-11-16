@@ -72,13 +72,13 @@ OFFICIAL_REFERENCE_VECTORS = [
         "None",
         "FIRST Specification: Zero impact across all vulnerable and subsequent systems yields exactly 0.0 None.",
     ),
-    # 9. Maximum Impact Boundary (All Vulnerable and Subsequent Impacts High)
-    # Source: FIRST CVSS v4.0 Specification Section 8 (MacroVector 000000 = 10.0)
+    # 9. Maximum Base Impact Boundary (All Vulnerable and Subsequent Impacts High)
+    # Source: FIRST CVSS v4.0 Specification Section 8 (MacroVector 000100 = 10.0)
     (
         "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H",
         10.0,
         "Critical",
-        "FIRST Specification: MacroVector 000000 representing maximum theoretical vulnerability severity.",
+        "FIRST Specification: MacroVector 000100 representing maximum theoretical Base vulnerability severity.",
     ),
 ]
 

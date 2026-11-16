@@ -1,6 +1,6 @@
 # Operational Risk Prioritization Framework
 
-This document outlines AppSentinel's operational triage methodology implemented in `app/security/risk_prioritizer.py`. It explains the priority tiers (P1 to P5), the contextual decision matrix, and the explicit separation between mathematical CVSS v4.0 scores and operational actionability.
+This document outlines AppSentinel's operational triage methodology implemented in `app/security/risk_prioritizer.py`. It explains the priority tiers (P1 to P5), the contextual decision matrix, and the explicit separation between mathematical CVSS v4.0 scores, nomenclature designations, and operational actionability.
 
 ---
 
@@ -11,7 +11,7 @@ CVSS provides an objective, standardized measure of a vulnerability's theoretica
 - Conversely, a medium-severity reflected XSS (CVSS 5.3) on a production banking portal with co-located missing CSP and unflagged session cookies presents an imminent compound threat.
 
 AppSentinel bridges this gap by calculating two complementary ratings:
-1. **CVSS v4.0 Score & Vector**: The objective technical severity benchmark.
+1. **CVSS v4.0 Score, Vector & Nomenclature**: The objective technical benchmark (`CVSS-B`, `CVSS-BT`, `CVSS-BE`, `CVSS-BTE`).
 2. **Operational Risk Priority (P1–P5)**: The actionable triage queue level.
 
 ---
@@ -57,7 +57,16 @@ When multiple findings target the same endpoint or form compound attack chains (
 
 ---
 
-## 4. Decoupling Principles & Anti-Corruption Rules
+## 4. Score Nomenclature & Supplemental Safety Integration
+
+Per FIRST CVSS v4.0 Specification:
+1. **Score Nomenclature Decoupling**: The nomenclature tags (`CVSS-B`, `CVSS-BT`, `CVSS-BE`, `CVSS-BTE`) identify which metric dimensions contributed to the mathematical score. They are stored alongside the vector for regulatory compliance and auditability.
+2. **Supplemental Safety Context**: Supplemental Safety `S:P` (Present) or `S:N` (Negligible) provides analyst visibility into physical/human safety implications without contaminating the mathematical Base score calculation.
+3. **Modified Safety Escalation**: Where Modified Subsequent System Safety (`MSI:S` or `MSA:S`) is established, the CVSS engine evaluates MacroVector EQ4 at Level 0, elevating environmental technical severity (`CVSS-BE` / `CVSS-BTE`).
+
+---
+
+## 5. Decoupling Principles & Anti-Corruption Rules
 
 To maintain scientific integrity and auditability, AppSentinel strictly enforces:
 1. **CVSS Independence**: The CVSS v4.0 mathematical score is strictly calculated from the 11 base metrics, Threat metric `E`, and Environmental metrics (`CR`, `IR`, `AR`, `M*`).
