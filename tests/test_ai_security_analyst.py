@@ -161,3 +161,31 @@ def test_daily_rate_limiting(client, analyst_test_data, monkeypatch):
         success, res, rec, msg = analyst.analyze_vulnerability(finding_id=vuln_id, user_id=user_id, force_refresh=True)
         assert success is False
         assert "limit reached" in msg.lower()
+
+
+def test_admin_daily_rate_limit_exemption(client, analyst_test_data):
+    """Verify administrator requests bypass daily rate limit throttling."""
+    user_id, target_id, vuln_id = analyst_test_data
+    with client.application.app_context():
+        allowed, count, limit = SecurityAnalyst.check_daily_limit(user_id, is_admin=True)
+        assert allowed is True
+
+
+def test_usage_log_error_secret_redaction(client, analyst_test_data):
+    """Verify secrets in error messages are redacted before database persistence."""
+    user_id, _, _ = analyst_test_data
+    with client.application.app_context():
+        leaked_error = "OpenAI Error: Request failed with key sk-proj-supersecretkey1234567890 and Bearer 1234567890abcdef1234"
+        log = SecurityAnalyst.log_usage(
+            user_id=user_id,
+            provider="openai",
+            model="gpt-4o-mini",
+            analysis_type="vulnerability_explanation",
+            input_tokens=0,
+            output_tokens=0,
+            status="FALLBACK",
+            error_message=leaked_error,
+        )
+        assert "sk-proj-supersecret" not in log.error_message
+        assert "[REDACTED_API_KEY]" in log.error_message
+        assert "Bearer [REDACTED_TOKEN]" in log.error_message

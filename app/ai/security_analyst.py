@@ -39,13 +39,16 @@ class SecurityAnalyst:
         return get_ai_client()
 
     @classmethod
-    def check_daily_limit(cls, user_id: int) -> Tuple[bool, int, int]:
+    def check_daily_limit(cls, user_id: int, is_admin: bool = False) -> Tuple[bool, int, int]:
         """Check if user has reached their daily AI analysis limit.
 
         Returns:
             (is_allowed, current_count, max_limit)
         """
         max_limit = AIConfig.get_daily_limit()
+        if is_admin:
+            return True, 0, max_limit
+
         today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
 
         # Count successful or cloud requests today
@@ -70,6 +73,7 @@ class SecurityAnalyst:
         error_message: Optional[str] = None,
     ) -> AIUsageLog:
         """Record token consumption and execution status for audit and billing."""
+        clean_error = PromptManager.sanitize_untrusted_text(error_message, 1000) if error_message else None
         log = AIUsageLog(
             user_id=user_id,
             provider=provider,
@@ -78,7 +82,7 @@ class SecurityAnalyst:
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             request_status=status,
-            error_message=error_message,
+            error_message=clean_error,
         )
         db.session.add(log)
         try:
@@ -116,7 +120,7 @@ class SecurityAnalyst:
                     pass
 
         # 3. Rate limit check
-        allowed, count, limit = self.check_daily_limit(user_id)
+        allowed, count, limit = self.check_daily_limit(user_id, is_admin=is_admin)
         if not allowed:
             return False, {}, None, f"Daily AI request limit reached ({count}/{limit})."
 
@@ -244,7 +248,7 @@ class SecurityAnalyst:
         if not target_data:
             return False, {}, "Target not found or unauthorized access."
 
-        allowed, count, limit = self.check_daily_limit(user_id)
+        allowed, count, limit = self.check_daily_limit(user_id, is_admin=is_admin)
         if not allowed:
             return False, {}, f"Daily AI request limit reached ({count}/{limit})."
 
@@ -331,7 +335,7 @@ class SecurityAnalyst:
         if target_id and not ContextBuilder.check_target_access(target_id, user_id, is_admin=is_admin):
             return False, {}, None, None, "Unauthorized target scope."
 
-        allowed, count, limit = self.check_daily_limit(user_id)
+        allowed, count, limit = self.check_daily_limit(user_id, is_admin=is_admin)
         if not allowed:
             return False, {}, None, None, f"Daily AI request limit reached ({count}/{limit})."
 

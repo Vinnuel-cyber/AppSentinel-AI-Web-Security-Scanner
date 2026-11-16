@@ -20,7 +20,7 @@ from flask import (
     current_app,
 )
 from flask_login import login_required, current_user
-from app.models import db, Target, Vulnerability
+from app.models import db, Target, Vulnerability, Scan
 from app.models.vulnerability import AIAnalysis
 from app.models.ai import AIConversation, AIMessage, AIUsageLog
 from app.ai.ai_service import AIService
@@ -54,6 +54,11 @@ def index():
         recent_findings = (
             Vulnerability.query.filter(
                 (Vulnerability.target_id.in_(target_ids))
+                | (
+                    Vulnerability.scan_id.in_(
+                        db.session.query(Scan.id).filter(Scan.target_id.in_(target_ids))
+                    )
+                )
             )
             .order_by(Vulnerability.cvss_score.desc())
             .limit(15)

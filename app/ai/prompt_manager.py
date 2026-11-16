@@ -51,6 +51,10 @@ CRITICAL SECURITY DIRECTIVES:
     REDACTION_PATTERNS = [
         # AWS Access Key
         (re.compile(r"\b(AKIA[0-9A-Z]{16})\b"), "[REDACTED_AWS_KEY]"),
+        # OpenAI API Key (bare)
+        (re.compile(r"\b(sk-[a-zA-Z0-9_\-]{20,})\b"), "[REDACTED_API_KEY]"),
+        # GitHub Personal Access Token (bare)
+        (re.compile(r"\b(gh[pousr]_[A-Za-z0-9_]{36,})\b"), "[REDACTED_GITHUB_TOKEN]"),
         # Private Keys
         (re.compile(r"-----BEGIN [A-Z ]+ PRIVATE KEY-----[\s\S]*?-----END [A-Z ]+ PRIVATE KEY-----"), "[REDACTED_PRIVATE_KEY]"),
         # Generic API Key / Secret assignments
@@ -61,6 +65,13 @@ CRITICAL SECURITY DIRECTIVES:
         (re.compile(r"(?i)(session|sessionid|jwt|authtoken|connect\.sid)=([a-zA-Z0-9_\-\.]{12,})"), r"\1=[REDACTED_COOKIE]"),
         # Basic Auth Header
         (re.compile(r"(?i)basic\s+[a-zA-Z0-9+/=]{16,}"), "Basic [REDACTED_BASIC_AUTH]"),
+    ]
+
+    # Delimiter Boundary Tags to Escape
+    DELIMITER_ESCAPE_PATTERNS = [
+        re.compile(r"</?untrusted_scanned_evidence\s*>", re.IGNORECASE),
+        re.compile(r"</?authorized_database_records\s*>", re.IGNORECASE),
+        re.compile(r"</?json\s*>", re.IGNORECASE),
     ]
 
     @classmethod
@@ -74,11 +85,15 @@ CRITICAL SECURITY DIRECTIVES:
         # 1. Strip null bytes and non-printable control characters (preserve standard newlines/tabs)
         sanitized = re.sub(r"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]", "", sanitized)
 
-        # 2. Redact credentials and private secrets
+        # 2. Escape structural XML delimiter boundaries to prevent breakout
+        for delim_pattern in cls.DELIMITER_ESCAPE_PATTERNS:
+            sanitized = delim_pattern.sub("[ESCAPED_DELIMITER_TAG]", sanitized)
+
+        # 3. Redact credentials and private secrets
         for pattern, replacement in cls.REDACTION_PATTERNS:
             sanitized = pattern.sub(replacement, sanitized)
 
-        # 3. Truncate to maximum permissible length
+        # 4. Truncate to maximum permissible length
         if len(sanitized) > max_len:
             sanitized = sanitized[:max_len] + f"\n... [TRUNCATED: Exceeded {max_len} character security limit]"
 

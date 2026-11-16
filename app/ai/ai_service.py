@@ -131,14 +131,17 @@ class AIService:
         if is_admin:
             return analysis
 
-        if analysis.user_id == user_id:
-            return analysis
-
         if analysis.vulnerability_id:
             if ContextBuilder.check_finding_access(analysis.vulnerability_id, user_id, is_admin=False):
                 return analysis
+            return None
 
-        return None
+        if analysis.target_id:
+            if ContextBuilder.check_target_access(analysis.target_id, user_id, is_admin=False):
+                return analysis
+            return None
+
+        return analysis if analysis.user_id == user_id else None
 
     @classmethod
     def get_analysis_for_finding(
