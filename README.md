@@ -1,16 +1,17 @@
-# AppSentinel — AI-Powered Web Application Security Scanner
+# AppSentinel — AI-Powered Web Application Security Scanner (v10.0-Final)
 
-AppSentinel is an enterprise-grade, academic and portfolio-quality web application security assessment platform. It systematically identifies web vulnerabilities, performs reconnaissance, maps findings to the OWASP Top 10, calculates risk using CVSS v4.0 principles, provides deterministic and AI-assisted remediation recommendations, and generates executive and technical PDF security reports.
+AppSentinel is an enterprise-grade, academic and portfolio-quality web application security assessment platform built with Python 3.11+, Flask, SQLAlchemy, MySQL, and ReportLab. It systematically identifies web vulnerabilities, performs reconnaissance, maps findings to the OWASP Top 10 (2025/2021), calculates risk using FIRST CVSS v4.0 principles, provides deterministic and AI-assisted remediation recommendations, and generates publication-grade PDF security assessment reports.
 
 ---
 
 ## 1. Project Objectives
 
-- **Automated Security Assessment**: Combine passive analysis with strictly scoped, non-destructive active probes (SQLi, XSS, Security Headers, Cookie Flags, TLS/SSL, Information Disclosure).
-- **OWASP Top 10 Alignment**: Map every finding to the official OWASP Top 10 standard with version-aware taxonomy and CWE identifiers.
-- **Risk Prioritization**: Documented, reproducible severity scoring (Critical, High, Medium, Low, Informational) based on CVSS v4.0 metrics.
-- **AI-Assisted Guidance**: Contextual remediation, root-cause analysis, and secure coding patterns with deterministic fallbacks when AI APIs are unavailable.
-- **Defensive Engineering**: Built-in SSRF protection, target domain verification, strict input validation, rate limiting, and secure credential storage.
+- **Automated Security Assessment**: Combine passive reconnaissance with strictly scoped, non-destructive active probes (SQLi, XSS, Security Headers, Cookie Flags, TLS/SSL, Sensitive Data Redaction, Information Disclosure).
+- **OWASP Top 10 Alignment**: Map every finding to the official OWASP Top 10:2025 standard (with full backward compatibility for OWASP Top 10:2021) and standard CWE identifiers.
+- **FIRST CVSS v4.0 Scoring**: Documented, reproducible severity scoring based on official FIRST CVSS v4.0 canonical vectors, MacroVectors (EQ1–EQ6), and operational priority tiers (P1–P5).
+- **AI-Assisted Security Guidance**: Contextual root-cause diagnostics, threat impact statements, and verified remediation code with 100% deterministic offline fallback.
+- **Defensive Engineering**: Built-in SSRF protection, cryptographic target domain verification, strict input validation, brute-force rate limiting, multi-tenant IDOR defense, and secure credential storage.
+- **Cryptographic PDF Deliverables**: Professional ReportLab PDF reports with SHA-256 integrity verification and path traversal containment.
 
 ---
 
@@ -25,20 +26,20 @@ FRONTEND (Bootstrap 5, Chart.js, Dark SOC Cyber Theme)
       ▼
 FLASK BACKEND API (RESTful Endpoints, Flask-Login, CSRF)
       │
-      ├── Authentication (RBAC: Admin, Analyst, User)
+      ├── Authentication (RBAC: Admin, User, scrypt hashing, brute-force limiter)
       ├── Target Management (Domain ownership verification, SSRF guard)
       └── Scan Manager
              │
              ├── Target Validation & Reconnaissance
-             ├── Vulnerability Scanner (SQLi, XSS, Headers, Cookies, TLS)
+             ├── Vulnerability Scanner (SQLi, XSS, Headers, Cookies, Sensitive Data)
              ├── Findings & Evidence Engine
-             ├── Risk Engine (CVSS v4.0 concepts)
-             ├── OWASP Top 10 Analyzer
-             ├── AI Security Analyst (OpenAI / Fallback)
-             └── Report Generator (ReportLab PDF)
+             ├── Risk Engine (FIRST CVSS v4.0 Canonical Vectors)
+             ├── OWASP Top 10 Analyzer (2025 default & 2021 historical)
+             ├── AI Security Analyst (OpenAI Live API / 100% Offline Deterministic Fallback)
+             └── Report Generator (ReportLab PDF with SHA-256 Integrity Verification)
                       │
                       ▼
-               DATABASE (MySQL / SQLite ORM Models)
+               DATABASE (MySQL 8.0+ / SQLite ORM Models)
 ```
 
 ---
@@ -49,13 +50,30 @@ FLASK BACKEND API (RESTful Endpoints, Flask-Login, CSRF)
 - **Web Framework**: Flask 3.0+, Flask-SQLAlchemy, Flask-Login, Flask-WTF
 - **Database**: MySQL 8.0+ / SQLite, SQLAlchemy 2.0 ORM, PyMySQL
 - **Security & Inspection**: Cryptography, Requests, BeautifulSoup4
-- **Reporting**: ReportLab
+- **Reporting**: ReportLab 4.x / 5.x
 - **AI Integration**: OpenAI API (optional, with deterministic offline fallback)
-- **Testing**: Pytest, Pytest-Flask
+- **Testing**: Pytest, Pytest-Flask (238 automated tests)
 
 ---
 
-## 4. Project Folder Structure
+## 4. Documentation
+
+Comprehensive technical documentation is available in the `docs/` directory:
+
+- [Project Architecture Specification](docs/PROJECT_ARCHITECTURE.md) — Architectural diagrams, data flows, components, and security models.
+- [Installation & Deployment Guide](docs/INSTALLATION_GUIDE.md) — Step-by-step setup for virtual environments, MySQL, SQLite, and Flask CLI.
+- [User Guide & Operator Manual](docs/USER_GUIDE.md) — Complete manual for registration, verification, scanning, AI diagnostics, and reporting.
+- [Final Security Review & Audit](docs/FINAL_SECURITY_REVIEW.md) — Independent security audit covering SSRF, IDOR, prompt injection, and cryptographic integrity.
+- [OWASP Mapping Methodology](docs/OWASP_MAPPING.md) — Version-aware taxonomy mapping for OWASP 2025 and 2021 standards.
+- [CVSS v4.0 Risk Engine Specification](docs/CVSS_V4_RISK_ENGINE.md) — FIRST CVSS v4.0 specification, MacroVectors, and scoring bands.
+- [Risk Prioritization Guide](docs/RISK_PRIORITIZATION.md) — Operational priority (P1–P5) decision matrix and SLA guidelines.
+- [Remediation Guide](docs/REMEDIATION_GUIDE.md) — Secure code patterns and remediation verification procedures.
+- [PDF Report Generator Specification](docs/PDF_REPORT_GENERATOR.md) — Canvas architecture, report schemas, and design guidelines.
+- [Report Security & Integrity Guide](docs/REPORT_SECURITY.md) — Path traversal defense, SHA-256 hashing, and markup escaping.
+
+---
+
+## 5. Project Folder Structure
 
 ```
 AppSentinel/
@@ -64,15 +82,20 @@ AppSentinel/
 ├── requirements.txt           # Python dependency specifications
 ├── pytest.ini                 # Pytest test discovery configuration
 ├── .env.example               # Environment variable template
-├── .env                       # Local environment configuration
 ├── .gitignore                 # Version control exclusion rules
 ├── README.md                  # Comprehensive documentation
 │
 ├── docs/                      # Technical documentation
-│   ├── OWASP_MAPPING.md       # OWASP Top 10:2021 mapping methodology & CWE taxonomy
-│   ├── CVSS_V4_RISK_ENGINE.md # CVSS v4.0 specification, MacroVectors, & scoring bands
-│   ├── RISK_PRIORITIZATION.md # Operational priority (P1-P5) decision matrix & SLA guide
-│   └── REMEDIATION_GUIDE.md   # Secure code examples & verification procedures
+│   ├── PROJECT_ARCHITECTURE.md# Complete system architecture specification
+│   ├── INSTALLATION_GUIDE.md  # Fresh setup, database & environment guide
+│   ├── USER_GUIDE.md          # User manual and operator walkthrough
+│   ├── FINAL_SECURITY_REVIEW.md# Comprehensive security controls audit
+│   ├── OWASP_MAPPING.md       # OWASP Top 10:2025/2021 mapping methodology
+│   ├── CVSS_V4_RISK_ENGINE.md # CVSS v4.0 specification & MacroVectors
+│   ├── RISK_PRIORITIZATION.md # Operational priority (P1-P5) decision matrix
+│   ├── REMEDIATION_GUIDE.md   # Secure code examples & verification procedures
+│   ├── PDF_REPORT_GENERATOR.md# ReportLab engine documentation
+│   └── REPORT_SECURITY.md     # PDF security, path containment & integrity
 │
 ├── app/
 │   ├── __init__.py            # Application factory (create_app)
@@ -84,160 +107,114 @@ AppSentinel/
 │   │   ├── vulnerability.py   # Vulnerability, Evidence, AIAnalysis, Report
 │   │   └── owasp.py           # OWASP assessment, CVSS risk, correlation, remediation
 │   ├── routes/                # Modular Flask route blueprints
-│   │   ├── __init__.py        # Blueprint exports
 │   │   ├── health.py          # / and /api/health monitoring endpoints
-│   │   ├── auth.py            # Authentication routes (V2)
-│   │   ├── dashboard.py       # Security dashboard routes (V3)
-│   │   ├── targets.py         # Target management routes (V4)
-│   │   ├── scanner.py         # Scanner engine routes (V5-V6)
-│   │   ├── owasp.py           # OWASP Top 10 assessment routes (V7)
-│   │   ├── risk.py            # CVSS v4.0 and Risk Engine routes (V7)
-│   │   └── reports.py         # Report generation routes (V9)
+│   │   ├── auth.py            # Authentication & session routes (V2)
+│   │   ├── dashboard.py       # Security dashboard routes (V3 & V10)
+│   │   ├── targets.py         # Target management & ownership routes (V4)
+│   │   ├── recon.py           # Passive reconnaissance routes (V5)
+│   │   ├── scanner.py         # Vulnerability scanner engine routes (V6)
+│   │   ├── owasp.py           # OWASP Top 10 assessment routes (V7 & V7.1)
+│   │   ├── risk.py            # CVSS v4.0 and Risk Engine routes (V7 & V7.2)
+│   │   ├── ai.py              # AI Security Analyst routes (V8)
+│   │   └── reports.py         # PDF report generation & download routes (V9)
 │   ├── scanner/               # Security scanner engines (V5-V6)
-│   ├── security/              # SSRF guard, OWASP mapper, CVSS v4 engine, correlator (V7)
+│   ├── security/              # SSRF guard, OWASP mapper, CVSS v4 engine, correlator
 │   ├── ai/                    # AI analysis & deterministic remediation (V8)
-│   ├── services/              # Scan orchestration, OWASP services & reporting (V7-V9)
-│   ├── templates/             # Jinja2 HTML templates
-│   │   ├── owasp/             # OWASP assessment dashboards (V7)
-│   │   └── risk/              # Risk assessment & finding risk detail pages (V7)
+│   ├── reports/               # ReportLab PDF builders, canvas & styling (V9)
+│   ├── services/              # Scan orchestration, OWASP services & reporting
+│   ├── templates/             # Jinja2 HTML templates (Dark Cyber SOC theme)
 │   └── static/                # CSS, JavaScript, and static assets
 │
-├── instance/                  # Local instance files and SQLite storage
-├── reports/                   # Generated audit PDF reports
-└── tests/                     # Automated test suite (136 test cases)
+└── tests/                     # Automated test suite (238 passing tests)
     ├── conftest.py            # Pytest fixtures and app factory harness
     ├── test_foundation.py     # Base app, security headers, CLI tests
     ├── test_health.py         # Health-check endpoint tests
     ├── test_models.py         # Database model relationships and validations
-    ├── test_owasp_2025_mapper.py # OWASP Top 10:2025 mapping tests (V7.1)
-    ├── test_owasp_mapper.py   # OWASP Top 10:2021 backward-compatibility tests (V7)
-    ├── test_cvss_v4_reference_vectors.py # Official FIRST CVSS v4.0 reference tests (V7.1)
-    ├── test_historical_owasp_migrations.py # Multi-version assessment migration tests (V7.1)
-    ├── test_risk_engine.py    # CVSS v4.0 scoring & vector validation tests (V7)
-    ├── test_finding_correlator.py # Finding correlation & compound threat tests (V7)
-    ├── test_remediation_engine.py # Defensive remediation guidance tests (V7)
-    └── test_owasp_routes.py   # OWASP & Risk Engine RBAC and route tests (V7)
+    ├── test_auth.py           # Authentication, scrypt, and lockout tests
+    ├── test_csrf_session.py   # CSRF protection and session tests
+    ├── test_rbac.py           # Role-based access control tests
+    ├── test_targets.py        # Target management & audit log tests
+    ├── test_target_validation.py # SSRF and URL validation tests
+    ├── test_recon.py          # Passive reconnaissance engine tests
+    ├── test_vulnerability_scanner.py # Vulnerability scanner tests
+    ├── test_owasp_2025_mapper.py # OWASP Top 10:2025 mapping tests
+    ├── test_owasp_mapper.py   # OWASP Top 10:2021 backward-compatibility tests
+    ├── test_cvss_v4_compliance.py # FIRST CVSS v4.0 compliance tests
+    ├── test_cvss_v4_reference_vectors.py # Reference vector tests
+    ├── test_historical_owasp_migrations.py # Multi-version migration tests
+    ├── test_risk_engine.py    # Risk prioritization tests
+    ├── test_finding_correlator.py # Finding correlation tests
+    ├── test_remediation_engine.py # Remediation guidance tests
+    ├── test_owasp_routes.py   # OWASP & Risk routes tests
+    ├── test_ai_config.py      # AI configuration tests
+    ├── test_ai_client.py      # AI client & error handling tests
+    ├── test_ai_fallback.py    # Deterministic fallback tests
+    ├── test_ai_prompt_injection.py # Sanitization & prompt injection tests
+    ├── test_ai_response_validator.py # Response validation tests
+    ├── test_ai_security_analyst.py # Security analyst service tests
+    ├── test_ai_authorization.py # Cross-tenant isolation tests
+    ├── test_ai_routes.py      # AI route tests
+    ├── test_pdf_reports.py    # ReportLab generation & SHA-256 tests
+    └── test_v10_end_to_end_integration.py # Full system integration pipeline
 ```
 
 ---
 
-## 5. Installation & Setup
+## 6. Installation & Setup
 
-### Prerequisites
-- Python 3.11 or higher
-- MySQL Server 8.0+ (or use default local SQLite)
-- Git
-
-### 1. Clone or Open Workspace
-```bash
-cd "C:\Users\vinnu\OneDrive\Desktop\Application Security project"
-```
-
-### 2. Create and Activate Virtual Environment
+### 1. Clone Workspace & Activate Environment
 ```powershell
 python -m venv venv
 .\venv\Scripts\activate
-```
-
-### 3. Install Dependencies
-```powershell
 pip install -r requirements.txt
 ```
 
-### 4. Configure Environment
+### 2. Configure Environment
 Copy `.env.example` to `.env`:
 ```powershell
 Copy-Item .env.example .env
 ```
-Adjust database parameters if connecting to MySQL:
-```env
-DB_USER=root
-DB_PASSWORD=your_mysql_password
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_NAME=appsentinel_db
-```
 
-### 5. Initialize Database Schema
+### 3. Initialize Database Schema & Admin
 ```powershell
 flask init-db
+flask create-admin --username admin --email admin@appsentinel.local --password "AdminPassword123!"
 ```
 
----
-
-## 6. Running the Application
-
-Start the local development server:
+### 4. Run Application
 ```powershell
 python app.py
 ```
-Or via the Flask CLI:
-```powershell
-flask run --host=127.0.0.1 --port=5000
-```
-Open your browser to:
-- Main Landing: [http://127.0.0.1:5000/](http://127.0.0.1:5000/)
-- Health Monitoring: [http://127.0.0.1:5000/api/health](http://127.0.0.1:5000/api/health)
+Access the application at [http://127.0.0.1:5000/](http://127.0.0.1:5000/).
 
 ---
 
 ## 7. Running Automated Tests
 
-Run the full automated test suite with verbose reporting:
+Run the full automated test suite:
 ```powershell
 pytest -v
 ```
-### Running Specific Test Modules
-```powershell
-pytest tests/test_pdf_reports.py
-pytest tests/test_ai_security_analyst.py
-pytest tests/test_ai_prompt_injection.py
-pytest tests/test_ai_response_validator.py
-pytest tests/test_ai_fallback.py
-pytest tests/test_ai_client.py
-pytest tests/test_ai_routes.py
-pytest tests/test_ai_authorization.py
-pytest tests/test_ai_config.py
-pytest tests/test_cvss_v4_compliance.py
-pytest tests/test_cvss_v4_reference_vectors.py
-pytest tests/test_owasp_2025_mapper.py
-pytest tests/test_historical_owasp_migrations.py
-pytest tests/test_owasp_mapper.py
-pytest tests/test_risk_engine.py
-pytest tests/test_finding_correlator.py
-pytest tests/test_remediation_engine.py
-pytest tests/test_owasp_routes.py
-pytest tests/test_vulnerability_scanner.py
-pytest tests/test_recon.py
-pytest tests/test_targets.py
-pytest tests/test_auth.py
-pytest tests/test_rbac.py
+
+All **238 tests** execute cleanly with zero failures:
+```
+====================== 238 passed in ~24s ======================
 ```
 
 ---
 
-## 8. Security & Ethical Boundaries
+## 8. Development Roadmap & Milestone History
 
-AppSentinel strictly enforces safe, evidence-based defensive auditing principles:
-- **SSRF Prevention**: Loopback (`127.0.0.1`, `::1`), private subnets (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), link-local metadata addresses (`169.254.169.254`), and post-resolution DNS rebinding are blocked.
-- **Strict Authorization**: Scans require verified target ownership (via DNS TXT or HTTP well-known token verification) before reconnaissance or vulnerability assessment.
-- **Non-Destructive Testing**: Test payloads are designed strictly for detection (e.g., syntax probes and harmless markers), never for data extraction, credential harvesting, persistent alteration, or denial-of-service.
-- **Privacy by Design**: Sensitive session cookies are audited without storing raw values. Discovered API keys and credentials are automatically and immediately redacted.
-
----
-
-## 9. Development Roadmap
-
-- [x] **V1: Project Foundation** (Core architecture, 10 models, configuration, health API, test suite)
-- [x] **V2: Authentication & RBAC** (User registration, login, session security, password hashing, role enforcement)
-- [x] **V3: Professional Dark Cyber Dashboard** (Dark SOC UI, metrics cards, Chart.js, statistics)
-- [x] **V4: Target Management & Verification** (SSRF validator, DNS TXT & HTTP well-known verification tokens, audit logs)
-- [x] **V5: Reconnaissance Engine** (Availability checker, passive tech detector, HTTP auditor, security headers, in-scope crawler, DNS analyzer, metadata parser)
-- [x] **V6: Advanced Vulnerability Scanner** (SQLi scanner, XSS scanner, Insecure cookies, Security misconfigurations, Information disclosure, Directory listing, Sensitive data exposure with redaction, Vulnerability Manager, local test lab)
-- [x] **V7: OWASP Analyzer & Risk Engine** (OWASP Top 10:2021 mapping, FIRST CVSS v4.0 scoring engine, operational priority P1-P5, finding correlation & compound threats, deterministic remediation advisories, SOC risk dashboards, 112 passing tests)
-- [x] **V7.1: OWASP 2025 Upgrade & CVSS v4.0 Validation** (Dual OWASP 2025/2021 support, full FIRST CVSS v4.0 specification audit with EQ1–EQ6 & Threat/Environmental metrics, 14 official reference vectors, historical assessment preservation, 136 passing tests)
-- [x] **V7.2: CVSS v4.0 Compliance Audit** (Strict Base SI/SA metric audit rejecting 'S', MSI/MSA safety support triggering EQ4 Level 0, Supplemental Safety S:P/S:N separation, complete Supplemental metrics AU/R/V/RE/U, 'Not Defined' X preservation and scoring equivalence, duplicate metric rejection, CVSS-B/BT/BE/BTE score nomenclature, canonical vector ordering, 161 passing tests)
-- [x] **V7.2.1: Final CVSS Validation** (Strict case-sensitive Provider Urgency validation rejecting uppercase/lowercase/invalid strings, test count reconciliation across all 19 test suites, official reference vector coverage distinction, 162 passing tests)
-- [x] **V8: AI Security Analyst** (Modular AI Security Analyst architecture, OpenAI Python SDK & Responses API integration, offline deterministic fallback engine, prompt injection defense, structural JSON schema validation, finding root-cause & remediation diagnostics, target posture synthesizer, grounded security chat, cross-user RBAC isolation, 212 passing tests)
-- [x] **V9: Professional PDF Report Generator** (Publication-grade PDF report engine with ReportLab 5.1+, Complete Security Assessment, Vulnerability Detail, and Executive Summary report formats, two-pass NumberedCanvas with "Page X of Y" and running confidentiality headers, CVSS v4.0 & OWASP 2025 matrix, evidence redaction, multi-tenant IDOR download security, path traversal protection, Report Center SOC UI, 226 passing tests)
-- [ ] **V10: Final Integration & Docker Deployment**
+- [x] **V1: Project Foundation** — Core architecture, 10 models, configuration, health API, test suite.
+- [x] **V2: Authentication & RBAC** — User registration, login, session security, scrypt password hashing, role enforcement.
+- [x] **V3: Professional Dark Cyber Dashboard** — Dark SOC UI, metrics cards, Chart.js, statistics.
+- [x] **V4: Target Management & Verification** — SSRF validator, DNS TXT & HTTP well-known verification tokens, audit logs.
+- [x] **V5: Reconnaissance Engine** — Availability checker, passive tech detector, HTTP auditor, security headers, in-scope crawler, DNS analyzer.
+- [x] **V6: Advanced Vulnerability Scanner** — SQLi scanner, XSS scanner, Insecure cookies, Security misconfigurations, Information disclosure, Directory listing, Sensitive data exposure with redaction, Vulnerability Manager.
+- [x] **V7: OWASP Analyzer & Risk Engine** — OWASP Top 10:2021 mapping, FIRST CVSS v4.0 scoring engine, operational priority P1-P5, finding correlation & compound threats, deterministic remediation advisories.
+- [x] **V7.1: OWASP 2025 Upgrade & CVSS v4.0 Validation** — Dual OWASP 2025/2021 support, FIRST CVSS v4.0 specification audit with EQ1–EQ6 & Threat/Environmental metrics, 14 official reference vectors, historical assessment preservation.
+- [x] **V7.2: CVSS v4.0 Compliance Audit** — Strict Base SI/SA metric audit rejecting 'S', MSI/MSA safety support triggering EQ4 Level 0, Supplemental Safety S:P/S:N separation, complete Supplemental metrics AU/R/V/RE/U, 'Not Defined' X preservation and scoring equivalence, duplicate metric rejection, CVSS-B/BT/BE/BTE score nomenclature, canonical vector ordering.
+- [x] **V7.2.1: Final CVSS Validation** — Strict case-sensitive Provider Urgency validation rejecting uppercase/lowercase/invalid strings, test count reconciliation across all test suites.
+- [x] **V8: AI Security Analyst** — Modular AI Security Analyst architecture, OpenAI Python SDK & Responses API integration, offline deterministic fallback engine, prompt injection defense, structural JSON schema validation, finding root-cause & remediation diagnostics, target posture synthesizer, grounded security chat, cross-user RBAC isolation.
+- [x] **V9: Professional PDF Report Generator** — Publication-grade PDF report engine with ReportLab 5.1+, Complete Security Assessment, Vulnerability Detail, and Executive Summary report formats, two-pass NumberedCanvas with "Page X of Y" and running confidentiality headers, CVSS v4.0 & OWASP 2025 matrix, evidence redaction, multi-tenant IDOR download security, path traversal protection, SHA-256 pre-download integrity validation.
+- [x] **V10: Final Integration & System Validation** — End-to-end operational pipeline integration, real database metrics telemetry across targets/scans/findings/reports/AI, Chart.js visual telemetry integration, navigation badge alignment (`v10.0-Final`), comprehensive end-to-end integration test suite, complete documentation package (`PROJECT_ARCHITECTURE.md`, `INSTALLATION_GUIDE.md`, `USER_GUIDE.md`, `FINAL_SECURITY_REVIEW.md`), 238 passing tests with 0 failures, 100% offline functionality.

@@ -84,6 +84,13 @@ def index():
     )
 
 
+@scanner_bp.route("/vulnerabilities", methods=["GET"])
+@login_required
+def vulnerabilities_list():
+    """Direct route for filterable vulnerability findings hub."""
+    return index()
+
+
 @scanner_bp.route("/start/<int:target_id>", methods=["POST"])
 @login_required
 def start_scan(target_id: int):

@@ -8,135 +8,361 @@
         <h3 class="fw-bold mb-1 text-light">
             <i class="fa-solid fa-chart-line text-info me-2"></i> Security Operations Dashboard
         </h3>
-        <p class="text-muted-cyber small mb-0">Unified cybersecurity posture & real-time target inventory.</p>
+        <p class="text-muted-cyber small mb-0">Unified cybersecurity posture, live vulnerability telemetry & audit inventory.</p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
         <a href="{{ url_for('targets.add') }}" class="btn btn-cyber-primary btn-sm px-3">
             <i class="fa-solid fa-plus me-1"></i> Add Target
         </a>
-        <a href="{{ url_for('targets.index') }}" class="btn btn-outline-info btn-sm px-3">
-            <i class="fa-solid fa-crosshairs me-1"></i> View All Targets
+        <a href="{{ url_for('scanner.index') }}" class="btn btn-outline-warning btn-sm px-3">
+            <i class="fa-solid fa-shield-virus me-1"></i> Launch Scan
+        </a>
+        <a href="{{ url_for('reports.index') }}" class="btn btn-outline-danger btn-sm px-3">
+            <i class="fa-solid fa-file-pdf me-1"></i> Reports
         </a>
     </div>
 </div>
 
-<!-- Metrics Statistics Grid -->
+<!-- Primary Metrics Cards -->
 <div class="row g-3 mb-4">
+    <!-- Targets Card -->
     <div class="col-sm-6 col-xl-3">
-        <div class="card card-cyber p-3">
+        <div class="card card-cyber p-3 h-100">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <div class="text-muted-cyber small fw-semibold">TOTAL TARGETS</div>
+                    <div class="text-muted-cyber small fw-semibold text-uppercase">Total Targets</div>
                     <h2 class="fw-bold text-light mt-1 mb-0">{{ metrics.targets.total }}</h2>
                 </div>
                 <div class="p-3 rounded-circle bg-dark border border-secondary text-info">
-                    <i class="fa-solid fa-globe fa-xl"></i>
+                    <i class="fa-solid fa-crosshairs fa-xl"></i>
                 </div>
             </div>
-            <div class="text-muted-cyber small mt-2">
-                <span class="text-success"><i class="fa-solid fa-check me-1"></i>{{ metrics.targets.verified }} Verified</span> &bull; 
-                <span class="text-warning">{{ metrics.targets.pending }} Pending</span>
+            <div class="text-muted-cyber small mt-2 d-flex justify-content-between">
+                <span class="text-success"><i class="fa-solid fa-check me-1"></i>{{ metrics.targets.verified }} Verified</span>
+                <span class="text-warning"><i class="fa-solid fa-clock me-1"></i>{{ metrics.targets.pending }} Pending</span>
             </div>
         </div>
     </div>
 
+    <!-- Scans Card -->
     <div class="col-sm-6 col-xl-3">
-        <div class="card card-cyber p-3">
+        <div class="card card-cyber p-3 h-100">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <div class="text-muted-cyber small fw-semibold">VERIFIED TARGETS</div>
-                    <h2 class="fw-bold text-success mt-1 mb-0">{{ metrics.targets.verified }}</h2>
-                </div>
-                <div class="p-3 rounded-circle bg-dark border border-secondary text-success">
-                    <i class="fa-solid fa-circle-check fa-xl"></i>
-                </div>
-            </div>
-            <div class="text-muted-cyber small mt-2">
-                Authorized for active scanning
-            </div>
-        </div>
-    </div>
-
-    <div class="col-sm-6 col-xl-3">
-        <div class="card card-cyber p-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="text-muted-cyber small fw-semibold">TOTAL SCANS</div>
+                    <div class="text-muted-cyber small fw-semibold text-uppercase">Total Scans</div>
                     <h2 class="fw-bold text-info mt-1 mb-0">{{ metrics.scans.total }}</h2>
                 </div>
                 <div class="p-3 rounded-circle bg-dark border border-secondary text-info">
                     <i class="fa-solid fa-shield-virus fa-xl"></i>
                 </div>
             </div>
-            <div class="text-muted-cyber small mt-2">
-                Audit history recorded
+            <div class="text-muted-cyber small mt-2 d-flex justify-content-between">
+                <span class="text-success"><i class="fa-solid fa-circle-check me-1"></i>{{ metrics.scans.completed }} Completed</span>
+                <span class="text-secondary">{{ metrics.scans.total - metrics.scans.completed }} Inactive</span>
             </div>
         </div>
     </div>
 
+    <!-- Findings Card -->
     <div class="col-sm-6 col-xl-3">
-        <div class="card card-cyber p-3">
+        <div class="card card-cyber p-3 h-100">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <div class="text-muted-cyber small fw-semibold">CRITICAL FINDINGS</div>
-                    <h2 class="fw-bold text-danger mt-1 mb-0">{{ metrics.vulnerabilities.critical }}</h2>
+                    <div class="text-muted-cyber small fw-semibold text-uppercase">Vulnerabilities</div>
+                    <h2 class="fw-bold text-danger mt-1 mb-0">{{ metrics.vulnerabilities.total }}</h2>
                 </div>
                 <div class="p-3 rounded-circle bg-dark border border-secondary text-danger">
                     <i class="fa-solid fa-triangle-exclamation fa-xl"></i>
                 </div>
             </div>
-            <div class="text-muted-cyber small mt-2">
-                Out of {{ metrics.vulnerabilities.total }} total findings
+            <div class="text-muted-cyber small mt-2 d-flex gap-1 flex-wrap">
+                <span class="badge bg-danger text-light" style="font-size: 0.65rem;">{{ metrics.vulnerabilities.critical }} Crit</span>
+                <span class="badge bg-warning text-dark" style="font-size: 0.65rem;">{{ metrics.vulnerabilities.high }} High</span>
+                <span class="badge bg-info text-dark" style="font-size: 0.65rem;">{{ metrics.vulnerabilities.medium }} Med</span>
+                <span class="badge bg-secondary text-light" style="font-size: 0.65rem;">{{ metrics.vulnerabilities.low }} Low</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reports Card -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-cyber p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted-cyber small fw-semibold text-uppercase">Reports Generated</div>
+                    <h2 class="fw-bold text-light mt-1 mb-0">{{ metrics.reports.total }}</h2>
+                </div>
+                <div class="p-3 rounded-circle bg-dark border border-secondary text-danger">
+                    <i class="fa-solid fa-file-pdf fa-xl"></i>
+                </div>
+            </div>
+            <div class="text-muted-cyber small mt-2 d-flex justify-content-between">
+                <span class="text-info">{{ metrics.reports.complete }} Complete</span>
+                <span class="text-warning">{{ metrics.reports.vuln_detail }} Detail</span>
+                <span class="text-success">{{ metrics.reports.executive }} Exec</span>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Recent Targets Table -->
+<!-- Secondary Status Row: AI Analyst Banner & Quick Health -->
+<div class="row g-3 mb-4">
+    <div class="col-md-8">
+        <div class="card card-cyber p-3 d-flex flex-row align-items-center justify-content-between flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-3">
+                <div class="p-2 rounded bg-dark border border-secondary text-info">
+                    <i class="fa-solid fa-brain fa-2x"></i>
+                </div>
+                <div>
+                    <div class="fw-bold text-light">AI Security Analyst Engine (V8)</div>
+                    <div class="small text-muted-cyber">
+                        Provider: <strong class="text-info">{{ metrics.ai_analyst.provider }}</strong> &bull; 
+                        Model: <code>{{ metrics.ai_analyst.model }}</code> &bull; 
+                        Total Analyses: <span class="text-light">{{ metrics.ai_analyst.total_analyses }}</span>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <a href="{{ url_for('ai.index') }}" class="btn btn-outline-info btn-sm">
+                    Open AI Console <i class="fa-solid fa-arrow-right fa-xs ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-cyber p-3 d-flex flex-row align-items-center justify-content-between">
+            <div>
+                <div class="small text-muted-cyber">Framework Taxonomy</div>
+                <div class="fw-bold text-light">OWASP 2025 &bull; CVSS v4.0</div>
+            </div>
+            <a href="{{ url_for('owasp.index') }}" class="btn btn-outline-secondary btn-sm">
+                View Matrix
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Visual Charts Row -->
+<div class="row g-4 mb-4">
+    <!-- Severity Breakdown Chart -->
+    <div class="col-lg-5">
+        <div class="card card-cyber h-100">
+            <div class="card-header-cyber d-flex justify-content-between align-items-center">
+                <span class="fw-bold text-light">
+                    <i class="fa-solid fa-chart-pie text-warning me-2"></i>Vulnerability Severity Distribution
+                </span>
+                <span class="badge bg-dark border border-secondary text-secondary">Active Findings</span>
+            </div>
+            <div class="card-body d-flex flex-column justify-content-center align-items-center p-4">
+                {% if metrics.vulnerabilities.total > 0 %}
+                    <div style="position: relative; height: 230px; width: 100%;">
+                        <canvas id="severityDoughnutChart"></canvas>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4 text-muted-cyber">
+                        <i class="fa-solid fa-shield-halved fa-3x mb-2 text-secondary opacity-50"></i>
+                        <p class="small mb-0">No security vulnerabilities detected yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- OWASP Top 10 Breakdown Chart -->
+    <div class="col-lg-7">
+        <div class="card card-cyber h-100">
+            <div class="card-header-cyber d-flex justify-content-between align-items-center">
+                <span class="fw-bold text-light">
+                    <i class="fa-solid fa-layer-group text-info me-2"></i>OWASP Top 10:2025 Observed Defects
+                </span>
+                <span class="badge bg-dark border border-secondary text-info">Taxonomy</span>
+            </div>
+            <div class="card-body p-4">
+                {% if metrics.owasp.total > 0 %}
+                    <div style="position: relative; height: 230px; width: 100%;">
+                        <canvas id="owaspBarChart"></canvas>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4 text-muted-cyber">
+                        <i class="fa-solid fa-clipboard-check fa-3x mb-2 text-secondary opacity-50"></i>
+                        <p class="small mb-0">No OWASP-mapped defects present in authorized scope.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity: Targets, Scans, and Reports Tables -->
+<div class="row g-4 mb-4">
+    <!-- Recent Targets Table -->
+    <div class="col-lg-6">
+        <div class="card card-cyber h-100">
+            <div class="card-header-cyber d-flex justify-content-between align-items-center">
+                <span class="fw-bold text-light">
+                    <i class="fa-solid fa-crosshairs text-info me-2"></i>Recent Targets
+                </span>
+                <a href="{{ url_for('targets.index') }}" class="text-info small text-decoration-none">
+                    View All ({{ metrics.targets.total }}) <i class="fa-solid fa-arrow-right fa-xs"></i>
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_targets %}
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0 align-middle" style="background-color: transparent;">
+                            <thead>
+                                <tr class="border-secondary text-muted-cyber small">
+                                    <th class="ps-3">Target</th>
+                                    <th>Status</th>
+                                    <th class="text-end pe-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for t in recent_targets %}
+                                    <tr class="border-secondary">
+                                        <td class="ps-3">
+                                            <div class="fw-bold text-light">{{ t.name }}</div>
+                                            <div class="small text-secondary font-monospace">{{ t.domain }}</div>
+                                        </td>
+                                        <td>
+                                            {% if t.is_verified %}
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.7rem;">
+                                                    <i class="fa-solid fa-check me-1"></i> Verified
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle" style="font-size: 0.7rem;">
+                                                    <i class="fa-solid fa-clock me-1"></i> Pending
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end pe-3">
+                                            <a href="{{ url_for('targets.details', target_id=t.id) }}" class="btn btn-outline-info btn-sm py-0 px-2" style="font-size: 0.75rem;">
+                                                Details
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4 text-muted-cyber">
+                        <p class="small mb-2">No targets registered yet.</p>
+                        <a href="{{ url_for('targets.add') }}" class="btn btn-cyber-primary btn-sm">Add Target</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Scans Table -->
+    <div class="col-lg-6">
+        <div class="card card-cyber h-100">
+            <div class="card-header-cyber d-flex justify-content-between align-items-center">
+                <span class="fw-bold text-light">
+                    <i class="fa-solid fa-shield-virus text-warning me-2"></i>Recent Scans
+                </span>
+                <a href="{{ url_for('scanner.index') }}" class="text-warning small text-decoration-none">
+                    View All ({{ metrics.scans.total }}) <i class="fa-solid fa-arrow-right fa-xs"></i>
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_scans %}
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0 align-middle" style="background-color: transparent;">
+                            <thead>
+                                <tr class="border-secondary text-muted-cyber small">
+                                    <th class="ps-3">Scan ID</th>
+                                    <th>Target</th>
+                                    <th>Status</th>
+                                    <th>Findings</th>
+                                    <th class="text-end pe-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for s in recent_scans %}
+                                    <tr class="border-secondary">
+                                        <td class="ps-3 font-monospace small">#{{ s.id }}</td>
+                                        <td>
+                                            <span class="text-light small">{{ s.target.name if s.target else 'Target #' ~ s.target_id }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if s.status == 'completed' %}bg-success{% elif s.status == 'running' %}bg-primary{% else %}bg-secondary{% endif %}" style="font-size: 0.7rem;">
+                                                {{ s.status }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-dark border border-secondary text-danger">
+                                                {{ s.total_vulnerabilities }}
+                                            </span>
+                                        </td>
+                                        <td class="text-end pe-3">
+                                            <a href="{{ url_for('scanner.results', scan_id=s.id) }}" class="btn btn-outline-warning btn-sm py-0 px-2" style="font-size: 0.75rem;">
+                                                Results
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4 text-muted-cyber">
+                        <p class="small mb-2">No security scans executed yet.</p>
+                        <a href="{{ url_for('scanner.index') }}" class="btn btn-cyber-primary btn-sm">Launch Scan</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Generated Reports Table -->
 <div class="card card-cyber mb-4">
     <div class="card-header-cyber d-flex justify-content-between align-items-center">
-        <span class="fw-bold text-light">Recent Target Registrations</span>
-        <a href="{{ url_for('targets.index') }}" class="text-info small text-decoration-none">
-            View All ({{ metrics.targets.total }}) <i class="fa-solid fa-arrow-right fa-xs"></i>
+        <span class="fw-bold text-light">
+            <i class="fa-solid fa-file-pdf text-danger me-2"></i>Recent Security Assessment Reports
+        </span>
+        <a href="{{ url_for('reports.index') }}" class="text-danger small text-decoration-none">
+            Report Center ({{ metrics.reports.total }}) <i class="fa-solid fa-arrow-right fa-xs"></i>
         </a>
     </div>
     <div class="card-body p-0">
-        {% if recent_targets %}
+        {% if recent_reports %}
             <div class="table-responsive">
-                <table class="table table-dark table-hover mb-0" style="background-color: transparent;">
+                <table class="table table-dark table-hover mb-0 align-middle" style="background-color: transparent;">
                     <thead>
                         <tr class="border-secondary text-muted-cyber small">
-                            <th class="ps-4">Target Name</th>
-                            <th>Domain</th>
-                            <th>Environment</th>
-                            <th>Ownership Status</th>
-                            <th class="text-end pe-4">Action</th>
+                            <th class="ps-3">Report Reference</th>
+                            <th>Target</th>
+                            <th>Type</th>
+                            <th>Generated Date</th>
+                            <th class="text-end pe-3">Download</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for t in recent_targets %}
-                            <tr class="border-secondary align-middle">
-                                <td class="ps-4 fw-bold">
-                                    <a href="{{ url_for('targets.details', target_id=t.id) }}" class="text-light text-decoration-none">
-                                        {{ t.name }}
-                                    </a>
+                        {% for r in recent_reports %}
+                            <tr class="border-secondary">
+                                <td class="ps-3">
+                                    <div class="fw-bold text-light small">
+                                        <i class="fa-solid fa-file-pdf text-danger me-1"></i> {{ r.title }}
+                                    </div>
+                                    <div class="text-secondary font-monospace" style="font-size: 0.7rem;">{{ r.report_filename }}</div>
                                 </td>
-                                <td><code>{{ t.domain }}</code></td>
-                                <td><span class="badge bg-dark border border-secondary">{{ t.environment }}</span></td>
                                 <td>
-                                    {% if t.is_verified %}
-                                        <span class="badge bg-success-subtle text-success border border-success-subtle">
-                                            <i class="fa-solid fa-circle-check me-1"></i> Verified
-                                        </span>
-                                    {% else %}
-                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
-                                            <i class="fa-solid fa-clock me-1"></i> Pending Verification
-                                        </span>
-                                    {% endif %}
+                                    <span class="small text-light">{{ r.target.name if r.target else 'Target #' ~ r.target_id }}</span>
                                 </td>
-                                <td class="text-end pe-4">
-                                    <a href="{{ url_for('targets.details', target_id=t.id) }}" class="btn btn-outline-info btn-sm">
-                                        View Details <i class="fa-solid fa-arrow-right fa-xs ms-1"></i>
+                                <td>
+                                    <span class="badge {% if r.report_type == 'COMPLETE' %}bg-primary{% elif r.report_type == 'VULN_DETAIL' %}bg-warning text-dark{% else %}bg-success{% endif %}" style="font-size: 0.7rem;">
+                                        {{ r.report_type }}
+                                    </span>
+                                </td>
+                                <td class="small text-secondary font-monospace">
+                                    {{ r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else 'N/A' }}
+                                </td>
+                                <td class="text-end pe-3">
+                                    <a href="{{ url_for('reports.download_report', report_id=r.id) }}" class="btn btn-outline-danger btn-sm py-0 px-2" style="font-size: 0.75rem;">
+                                        <i class="fa-solid fa-download me-1"></i> PDF
                                     </a>
                                 </td>
                             </tr>
@@ -145,20 +371,91 @@
                 </table>
             </div>
         {% else %}
-            <!-- Proper Empty State -->
-            <div class="text-center py-5">
-                <div class="mb-3">
-                    <span class="d-inline-flex p-3 rounded-circle bg-dark border border-secondary text-secondary">
-                        <i class="fa-solid fa-crosshairs fa-2xl"></i>
-                    </span>
-                </div>
-                <h5 class="fw-bold text-light mb-1">No Targets Registered Yet</h5>
-                <p class="text-muted-cyber small mb-3">Add your first target to monitor security posture and schedule scans.</p>
-                <a href="{{ url_for('targets.add') }}" class="btn btn-cyber-primary btn-sm px-4">
-                    <i class="fa-solid fa-plus me-1"></i> Add First Target
-                </a>
+            <div class="text-center py-4 text-muted-cyber">
+                <p class="small mb-2">No security reports compiled yet.</p>
+                <a href="{{ url_for('reports.index') }}" class="btn btn-outline-danger btn-sm">Compile Report</a>
             </div>
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // 1. Severity Doughnut Chart
+    const sevCanvas = document.getElementById("severityDoughnutChart");
+    if (sevCanvas) {
+        const crit = {{ metrics.vulnerabilities.critical }};
+        const high = {{ metrics.vulnerabilities.high }};
+        const med = {{ metrics.vulnerabilities.medium }};
+        const low = {{ metrics.vulnerabilities.low }};
+        const info = {{ metrics.vulnerabilities.info }};
+
+        new Chart(sevCanvas, {
+            type: "doughnut",
+            data: {
+                labels: ["Critical", "High", "Medium", "Low", "Info"],
+                datasets: [{
+                    data: [crit, high, med, low, info],
+                    backgroundColor: ["#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4"],
+                    borderColor: "#0e172a",
+                    borderWidth: 2,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: "right",
+                        labels: { color: "#94a3b8", boxWidth: 12, padding: 10 }
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. OWASP Bar Chart
+    const owaspCanvas = document.getElementById("owaspBarChart");
+    if (owaspCanvas) {
+        const owaspDist = {{ metrics.owasp.distribution | tojson }};
+        const labels = Object.keys(owaspDist);
+        const dataValues = Object.values(owaspDist);
+
+        new Chart(owaspCanvas, {
+            type: "bar",
+            data: {
+                labels: labels.map(l => l.length > 25 ? l.substring(0, 22) + '...' : l),
+                datasets: [{
+                    label: "Findings",
+                    data: dataValues,
+                    backgroundColor: "#00d2ff",
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: "y",
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: "#94a3b8", stepSize: 1 },
+                        grid: { color: "#1e293b" }
+                    },
+                    y: {
+                        ticks: { color: "#94a3b8" },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
 {% endblock %}
