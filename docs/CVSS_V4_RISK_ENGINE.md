@@ -134,7 +134,7 @@ AppSentinel's `validate_vector` method enforces strict FIRST specification compl
 2. **Mandatory Base Metrics**: All 11 Base metrics (`AV`, `AC`, `AT`, `PR`, `UI`, `VC`, `VI`, `VA`, `SC`, `SI`, `SA`) must be present and cannot have value `X`.
 3. **No Duplicate Metrics**: Vectors containing duplicate metric tags (e.g. `.../AV:N/.../AV:A` or `.../E:A/E:P`) are strictly rejected.
 4. **No Unknown Metrics**: Unrecognized tags (e.g. `UNKNOWN:TAG`) are strictly rejected.
-5. **Case Sensitivity**: Metric tags and values must be uppercase, with the exception of Provider Urgency `U` which accepts official Title Case (`Clear`, `Green`, `Amber`, `Red`) and uppercase.
+5. **Case Sensitivity**: Metric tags and values must be uppercase, with the exception of Provider Urgency `U` which is strictly case-sensitive per FIRST specification. Allowed values are exactly: `X`, `Clear`, `Green`, `Amber`, `Red`. All uppercase (`CLEAR`, `GREEN`, `AMBER`, `RED`), lowercase (`clear`, `green`, `amber`, `red`), and non-standard strings are strictly rejected without silent normalization.
 6. **Canonical Serialization Order**: `CANONICAL_ORDER` serializes metrics strictly as:
    `Base (AV..SA) -> Threat (E) -> Environmental Requirements (CR..AR) -> Modified Base (MAV..MSA) -> Supplemental (S..U)`.
 
@@ -142,9 +142,10 @@ AppSentinel's `validate_vector` method enforces strict FIRST specification compl
 
 ## 7. Official Reference Test Results
 
-The engine is verified across **161 automated tests** with zero regressions:
-- **`tests/test_cvss_v4_compliance.py`** (25 tests): Strict FIRST audit validating Base SI/SA rejection of 'S', MSI/MSA acceptance of 'S', Supplemental Safety 'S' separation, Supplemental metrics (AU, R, V, RE, U), "Not Defined" (X) preservation, duplicate metric rejection, nomenclature tags, canonical normalization, and parametric MacroVector coverage.
+The engine is verified across **162 automated tests** (19 test modules) with zero regressions:
+- **`tests/test_cvss_v4_compliance.py`** (26 tests): Strict FIRST audit validating Base SI/SA rejection of 'S', MSI/MSA acceptance of 'S', Supplemental Safety 'S' separation, case-sensitive Provider Urgency (`U`) accepting only `X`, `Clear`, `Green`, `Amber`, `Red` and rejecting all uppercase/lowercase/invalid variations, Supplemental metrics (`AU`, `R`, `V`, `RE`), "Not Defined" (`X`) preservation, duplicate metric rejection, nomenclature tags, canonical normalization, and parametric MacroVector coverage.
 - **`tests/test_cvss_v4_reference_vectors.py`** (14 tests): Official FIRST case studies and boundary conditions.
+- **`tests/test_risk_engine.py`** (7 tests): Scoring integration and confidence decoupling tests.
 
 | Official Test Vector | Calculated Score | Expected Score | Severity Rating | Nomenclature | Spec Source |
 |---|---|---|---|---|---|

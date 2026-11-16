@@ -91,7 +91,7 @@ class CVSS4RiskEngine:
         "R": {"X", "A", "U", "I"},
         "V": {"X", "D", "C"},
         "RE": {"X", "L", "M", "H"},
-        "U": {"X", "Clear", "Green", "Amber", "Red", "CLEAR", "GREEN", "AMBER", "RED"},
+        "U": {"X", "Clear", "Green", "Amber", "Red"},
     }
 
     # Max Severity Distances in EQs MacroVectors (FIRST Specification)
@@ -365,16 +365,18 @@ class CVSS4RiskEngine:
                 return False, f"Duplicate metric '{k_clean}' in vector", {}
             seen_metrics.add(k_clean)
 
-            # Metrics in CVSS v4.0 must be uppercase (except Provider Urgency U values which can be title/upper)
+            # Metrics in CVSS v4.0: Metric tag must be uppercase
             if k_clean != k_clean.upper():
                 return False, f"Metric tags and values must be uppercase: '{p}'", {}
 
+            # All metric values must be uppercase, EXCEPT Provider Urgency U which is case-sensitive
             if k_clean != "U":
                 if v_clean != v_clean.upper():
                     return False, f"Metric tags and values must be uppercase: '{p}'", {}
             else:
+                # Provider Urgency is strictly case-sensitive per FIRST specification
                 if v_clean not in cls.METRIC_VALUES["U"]:
-                    return False, f"Invalid value '{v_clean}' for metric 'U'", {}
+                    return False, f"Invalid value '{v_clean}' for metric 'U' (Provider Urgency is case-sensitive; must be exactly 'X', 'Clear', 'Green', 'Amber', or 'Red')", {}
 
             # Reject unrecognized metric keys
             if k_clean not in cls.METRIC_VALUES:

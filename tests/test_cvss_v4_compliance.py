@@ -174,14 +174,40 @@ def test_all_supplemental_metrics_validation():
     assert score == 9.3
 
 
-def test_provider_urgency_title_and_uppercase_handling():
-    """Verify Provider Urgency (U) accepts official Title Case and Uppercase."""
+def test_provider_urgency_valid_values():
+    """Verify Provider Urgency (U) accepts exactly official case-sensitive values: X, Clear, Green, Amber, Red."""
     base_vec = "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N"
-    for urgency in ["Clear", "Green", "Amber", "Red", "CLEAR", "GREEN", "AMBER", "RED"]:
+    for urgency in ["X", "Clear", "Green", "Amber", "Red"]:
         vec = f"{base_vec}/U:{urgency}"
         ok, msg, metrics = CVSS4RiskEngine.validate_vector(vec)
         assert ok is True, f"Provider Urgency U:{urgency} failed: {msg}"
         assert metrics["U"] == urgency
+
+
+def test_provider_urgency_rejects_invalid_case_and_values():
+    """Verify Provider Urgency (U) strictly rejects uppercase, lowercase, and invalid strings."""
+    base_vec = "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N"
+
+    # Uppercase variations must be rejected per FIRST CVSS v4.0 specification
+    invalid_uppercase = ["CLEAR", "GREEN", "AMBER", "RED"]
+    for val in invalid_uppercase:
+        vec = f"{base_vec}/U:{val}"
+        ok, msg, _ = CVSS4RiskEngine.validate_vector(vec)
+        assert ok is False, f"Provider Urgency U:{val} (uppercase) must be rejected"
+        assert "invalid value" in msg.lower() and "u" in msg.lower()
+
+    # Lowercase variations must be rejected
+    invalid_lowercase = ["clear", "green", "amber", "red", "x"]
+    for val in invalid_lowercase:
+        vec = f"{base_vec}/U:{val}"
+        ok, msg, _ = CVSS4RiskEngine.validate_vector(vec)
+        assert ok is False, f"Provider Urgency U:{val} (lowercase) must be rejected"
+
+    # Arbitrary strings must be rejected
+    for val in ["High", "Critical", "Moderate", "YELLOW"]:
+        vec = f"{base_vec}/U:{val}"
+        ok, msg, _ = CVSS4RiskEngine.validate_vector(vec)
+        assert ok is False, f"Provider Urgency U:{val} must be rejected"
 
 
 # ==============================================================================
