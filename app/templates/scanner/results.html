@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Scan Report #{{ scan.id }} | AppSentinel{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb & Actions -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{{ url_for('scanner.index') }}" class="text-info text-decoration-none">Vulnerabilities</a></li>
+                    <li class="breadcrumb-item active text-light">Scan #{{ scan.id }}</li>
+                </ol>
+            </nav>
+            <h1 class="h3 fw-bold mb-1 text-light">
+                <i class="fa-solid fa-file-waveform text-warning me-2"></i>Vulnerability Assessment Report #{{ scan.id }}
+            </h1>
+            <div class="d-flex align-items-center gap-3 text-secondary small">
+                <span><i class="fa-solid fa-bullseye me-1"></i> Target: <strong class="text-light">{{ target.name }}</strong> ({{ target.domain }})</span>
+                <span><i class="fa-solid fa-calendar me-1"></i> {{ scan.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') if scan.created_at else '-' }}</span>
+                <span><i class="fa-solid fa-stopwatch me-1"></i> Duration: {{ scan.duration_seconds }}s</span>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('scanner.api_findings', scan_id=scan.id) }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-code me-1"></i> API JSON
+            </a>
+            {% if scan.status == 'running' %}
+                <form action="{{ url_for('scanner.cancel_scan', scan_id=scan.id) }}" method="POST" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i class="fa-solid fa-ban me-1"></i> Cancel Scan
+                    </button>
+                </form>
+            {% else %}
+                <form action="{{ url_for('scanner.start_scan', target_id=target.id) }}" method="POST" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-cyber-primary btn-sm">
+                        <i class="fa-solid fa-rotate-right me-1"></i> Re-Scan Target
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Severity Distribution & Risk Score Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card card-cyber p-3 text-center h-100">
+                <div class="text-secondary small fw-bold text-uppercase mb-1">Composite Risk Score</div>
+                <div class="h2 mb-1 fw-bold {{ 'text-danger' if scan.overall_risk == 'Critical' else ('text-warning' if scan.overall_risk == 'High' else 'text-info') }}">
+                    {{ scan.risk_score }} / 100
+                </div>
+                <div>
+                    <span class="badge {{ 'bg-danger' if scan.overall_risk == 'Critical' else ('bg-warning text-dark' if scan.overall_risk == 'High' else 'bg-info text-dark') }}">
+                        {{ scan.overall_risk }} Risk
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="card card-cyber p-3 h-100">
+                <div class="text-secondary small fw-bold text-uppercase mb-2">Findings Distribution by Severity</div>
+                <div class="row g-2 text-center">
+                    <div class="col">
+                        <div class="p-2 border border-secondary rounded bg-dark">
+                            <div class="h4 fw-bold text-danger mb-0">{{ scan.critical_count }}</div>
+                            <div class="small text-danger">Critical</div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="p-2 border border-secondary rounded bg-dark">
+                            <div class="h4 fw-bold text-warning mb-0">{{ scan.high_count }}</div>
+                            <div class="small text-warning">High</div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="p-2 border border-secondary rounded bg-dark">
+                            <div class="h4 fw-bold text-info mb-0">{{ scan.medium_count }}</div>
+                            <div class="small text-info">Medium</div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="p-2 border border-secondary rounded bg-dark">
+                            <div class="h4 fw-bold text-secondary mb-0">{{ scan.low_count }}</div>
+                            <div class="small text-secondary">Low</div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="p-2 border border-secondary rounded bg-dark">
+                            <div class="h4 fw-bold text-secondary mb-0">{{ scan.info_count }}</div>
+                            <div class="small text-secondary">Info</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Findings Table -->
+    <div class="card card-cyber">
+        <div class="card-header-cyber d-flex align-items-center justify-content-between">
+            <span class="fw-bold text-light">
+                <i class="fa-solid fa-bug text-danger me-2"></i>Identified Vulnerabilities ({{ vulnerabilities|length }})
+            </span>
+            <span class="badge bg-dark border border-secondary text-secondary">Evidence-Backed</span>
+        </div>
+        <div class="card-body p-0">
+            {% if vulnerabilities %}
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0 align-middle">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th class="ps-4">Finding Title</th>
+                                <th>Severity</th>
+                                <th>Confidence</th>
+                                <th>Category / CWE</th>
+                                <th>Target Location</th>
+                                <th>Module</th>
+                                <th class="text-end pe-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for v in vulnerabilities %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <a href="{{ url_for('scanner.vulnerability_details', vuln_id=v.id) }}" class="fw-bold text-decoration-none text-light">
+                                            {{ v.title }}
+                                        </a>
+                                        <div class="small text-secondary font-monospace">{{ v.owasp_category }}</div>
+                                    </td>
+                                    <td>
+                                        {% if v.severity.upper() == 'CRITICAL' %}
+                                            <span class="badge bg-danger">CRITICAL</span>
+                                        {% elif v.severity.upper() == 'HIGH' %}
+                                            <span class="badge bg-warning text-dark">HIGH</span>
+                                        {% elif v.severity.upper() == 'MEDIUM' %}
+                                            <span class="badge bg-info text-dark">MEDIUM</span>
+                                        {% elif v.severity.upper() == 'LOW' %}
+                                            <span class="badge bg-secondary">LOW</span>
+                                        {% else %}
+                                            <span class="badge bg-dark border border-secondary">INFO</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if v.confidence.upper() == 'CONFIRMED' %}
+                                            <span class="badge bg-success-subtle text-success border border-success"><i class="fa-solid fa-check me-1"></i>CONFIRMED</span>
+                                        {% elif v.confidence.upper() == 'HIGH' %}
+                                            <span class="badge bg-info-subtle text-info border border-info">HIGH</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary-subtle text-secondary">{{ v.confidence }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="text-light small">{{ v.vulnerability_type }}</div>
+                                        <span class="text-secondary font-monospace small">{{ v.cwe_id }}</span>
+                                    </td>
+                                    <td class="font-monospace small text-truncate" style="max-width: 280px;" title="{{ v.affected_url }}">
+                                        {{ v.affected_url }}
+                                        {% if v.parameter %}
+                                            <span class="text-warning">[{{ v.parameter }}]</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="font-monospace small text-secondary">{{ v.scanner_module }}</td>
+                                    <td class="text-end pe-4">
+                                        <a href="{{ url_for('scanner.vulnerability_details', vuln_id=v.id) }}" class="btn btn-outline-info btn-sm">
+                                            <i class="fa-solid fa-circle-info me-1"></i> Details
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5 text-secondary">
+                    <i class="fa-solid fa-circle-check fa-3x mb-3 text-success"></i>
+                    <p class="mb-0">Zero vulnerabilities identified. The target demonstrated hardened security posture against all executed checks.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

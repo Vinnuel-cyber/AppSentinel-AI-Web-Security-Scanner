@@ -49,7 +49,23 @@ def run_database_migrations(app) -> None:
                     db.session.execute(text("ALTER TABLE targets ADD COLUMN deleted_at DATETIME"))
                     db.session.commit()
 
-            # Create any newly introduced tables (such as target_audit_logs)
+            # 3. Vulnerabilities table migrations
+            if "vulnerabilities" in table_names:
+                vuln_cols = {col["name"] for col in inspector.get_columns("vulnerabilities")}
+                if "target_id" not in vuln_cols:
+                    app.logger.info("Migrating schema: adding target_id column to vulnerabilities table.")
+                    db.session.execute(text("ALTER TABLE vulnerabilities ADD COLUMN target_id INTEGER"))
+                    db.session.commit()
+                if "confidence" not in vuln_cols:
+                    app.logger.info("Migrating schema: adding confidence column to vulnerabilities table.")
+                    db.session.execute(text("ALTER TABLE vulnerabilities ADD COLUMN confidence VARCHAR(20) DEFAULT 'MEDIUM'"))
+                    db.session.commit()
+                if "scanner_module" not in vuln_cols:
+                    app.logger.info("Migrating schema: adding scanner_module column to vulnerabilities table.")
+                    db.session.execute(text("ALTER TABLE vulnerabilities ADD COLUMN scanner_module VARCHAR(64) DEFAULT 'vulnerability_manager'"))
+                    db.session.commit()
+
+            # Create any newly introduced tables (such as target_audit_logs, recon tables)
             db.create_all()
         except Exception as exc:
             db.session.rollback()

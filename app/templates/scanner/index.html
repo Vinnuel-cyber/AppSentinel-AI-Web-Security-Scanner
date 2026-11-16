@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block title %}Vulnerability Scanner | AppSentinel{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h1 class="h3 fw-bold mb-1 text-light">
+                <i class="fa-solid fa-shield-virus text-warning me-2"></i>Vulnerability Scanner Hub
+            </h1>
+            <p class="text-secondary mb-0 small">
+                Evidence-based vulnerability detection across verified targets (SQLi, XSS, Insecure Cookies, Misconfigurations, Information Disclosure, Directory Indexing, Sensitive Tokens).
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('targets.index') }}" class="btn btn-outline-info btn-sm">
+                <i class="fa-solid fa-crosshairs me-1"></i> Targets
+            </a>
+            <a href="{{ url_for('recon.index') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-satellite-dish me-1"></i> Recon Hub
+            </a>
+        </div>
+    </div>
+
+    <!-- Vulnerability Severity Metrics Cards -->
+    <div class="row g-3 mb-4 text-center">
+        <div class="col-6 col-md-2">
+            <div class="card card-cyber p-3 h-100">
+                <div class="text-secondary small fw-bold text-uppercase mb-1">Total Findings</div>
+                <div class="h3 fw-bold text-light mb-0">{{ metrics.total }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card card-cyber p-3 h-100 border-danger">
+                <div class="text-danger small fw-bold text-uppercase mb-1">Critical</div>
+                <div class="h3 fw-bold text-danger mb-0">{{ metrics.critical }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card card-cyber p-3 h-100 border-warning">
+                <div class="text-warning small fw-bold text-uppercase mb-1">High</div>
+                <div class="h3 fw-bold text-warning mb-0">{{ metrics.high }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card card-cyber p-3 h-100">
+                <div class="text-info small fw-bold text-uppercase mb-1">Medium</div>
+                <div class="h3 fw-bold text-info mb-0">{{ metrics.medium }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card card-cyber p-3 h-100">
+                <div class="text-secondary small fw-bold text-uppercase mb-1">Low</div>
+                <div class="h3 fw-bold text-light mb-0">{{ metrics.low }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card card-cyber p-3 h-100">
+                <div class="text-secondary small fw-bold text-uppercase mb-1">Informational</div>
+                <div class="h3 fw-bold text-secondary mb-0">{{ metrics.info }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Scan Launch & Recent Scans Row -->
+    <div class="row g-4 mb-4">
+        <!-- Target Selection Card -->
+        <div class="col-lg-5">
+            <div class="card card-cyber h-100">
+                <div class="card-header-cyber d-flex align-items-center justify-content-between">
+                    <span class="fw-bold text-light">
+                        <i class="fa-solid fa-play text-success me-2"></i>Launch Vulnerability Assessment
+                    </span>
+                    <span class="badge bg-dark border border-secondary text-warning">V6 Engine</span>
+                </div>
+                <div class="card-body p-4">
+                    {% if verified_targets %}
+                        <form method="POST" id="startScanForm">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="mb-3">
+                                <label for="target_select" class="form-label text-secondary small fw-bold">Select Authorized Verified Target</label>
+                                <select class="form-select form-control-cyber" id="target_select" name="target_id" required>
+                                    <option value="" disabled selected>-- Choose target to scan --</option>
+                                    {% for tgt in verified_targets %}
+                                        <option value="{{ tgt.id }}">
+                                            {{ tgt.name }} ({{ tgt.domain }}) - [{{ tgt.environment }}]
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="alert alert-dark border border-secondary p-3 mb-3 small">
+                                <i class="fa-solid fa-shield-halved text-info me-2"></i>
+                                <strong>Evidence-Based Audit:</strong> Non-destructive checks are executed against discovered routes. All findings include reproducible evidence.
+                            </div>
+
+                            <button type="button" id="launchBtn" class="btn btn-cyber-primary w-100" onclick="launchScan()">
+                                <i class="fa-solid fa-shield-virus me-1"></i> Start Vulnerability Scan
+                            </button>
+                        </form>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fa-solid fa-triangle-exclamation fa-3x text-warning mb-3"></i>
+                            <h5 class="text-light">No Verified Targets Available</h5>
+                            <p class="text-secondary small mb-3">
+                                Vulnerability scans are strictly restricted to verified targets. Verify your target ownership first.
+                            </p>
+                            <a href="{{ url_for('targets.index') }}" class="btn btn-outline-info btn-sm">
+                                <i class="fa-solid fa-crosshairs me-1"></i> Go to Targets
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Scans Mini-Table -->
+        <div class="col-lg-7">
+            <div class="card card-cyber h-100">
+                <div class="card-header-cyber d-flex align-items-center justify-content-between">
+                    <span class="fw-bold text-light">
+                        <i class="fa-solid fa-clock-rotate-left text-info me-2"></i>Recent Scans
+                    </span>
+                    <span class="text-secondary small">{{ recent_scans|length }} scans recorded</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_scans %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover mb-0 align-middle">
+                                <thead class="table-secondary">
+                                    <tr>
+                                        <th class="ps-3">Scan ID</th>
+                                        <th>Target</th>
+                                        <th>Status</th>
+                                        <th>Findings</th>
+                                        <th>Risk Score</th>
+                                        <th>Date</th>
+                                        <th class="text-end pe-3">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for s in recent_scans %}
+                                        <tr>
+                                            <td class="ps-3 fw-mono text-info">#{{ s.id }}</td>
+                                            <td class="fw-bold text-light">{{ s.target.name if s.target else 'Deleted' }}</td>
+                                            <td>
+                                                {% if s.status == 'completed' %}
+                                                    <span class="badge bg-success-subtle text-success border border-success">Completed</span>
+                                                {% elif s.status == 'running' %}
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary">Running...</span>
+                                                {% elif s.status == 'cancelled' %}
+                                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary">Cancelled</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger-subtle text-danger border border-danger">Failed</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-dark border border-secondary text-light">{{ s.total_vulnerabilities }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge {{ 'bg-danger' if s.overall_risk == 'Critical' else ('bg-warning text-dark' if s.overall_risk == 'High' else 'bg-dark border border-secondary') }}">
+                                                    {{ s.risk_score }} ({{ s.overall_risk }})
+                                                </span>
+                                            </td>
+                                            <td class="text-secondary small">{{ s.created_at.strftime('%Y-%m-%d %H:%M') if s.created_at else '-' }}</td>
+                                            <td class="text-end pe-3">
+                                                <a href="{{ url_for('scanner.results', scan_id=s.id) }}" class="btn btn-outline-info btn-sm">
+                                                    <i class="fa-solid fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 text-secondary">
+                            <p class="mb-0">No vulnerability scans executed yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filterable Vulnerabilities Table -->
+    <div class="card card-cyber mb-4">
+        <div class="card-header-cyber">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <span class="fw-bold text-light">
+                    <i class="fa-solid fa-list-check text-warning me-2"></i>Vulnerability Findings Catalog (Showing {{ vulnerabilities|length }})
+                </span>
+            </div>
+            <!-- Filter Bar Form -->
+            <form method="GET" action="{{ url_for('scanner.index') }}" class="row g-2 mt-2 align-items-center">
+                <div class="col-md-3">
+                    <select name="severity" class="form-select form-select-sm form-control-cyber">
+                        <option value="">All Severities</option>
+                        <option value="CRITICAL" {% if selected_severity == 'CRITICAL' %}selected{% endif %}>Critical</option>
+                        <option value="HIGH" {% if selected_severity == 'HIGH' %}selected{% endif %}>High</option>
+                        <option value="MEDIUM" {% if selected_severity == 'MEDIUM' %}selected{% endif %}>Medium</option>
+                        <option value="LOW" {% if selected_severity == 'LOW' %}selected{% endif %}>Low</option>
+                        <option value="INFORMATIONAL" {% if selected_severity == 'INFORMATIONAL' %}selected{% endif %}>Informational</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="confidence" class="form-select form-select-sm form-control-cyber">
+                        <option value="">All Confidence Levels</option>
+                        <option value="CONFIRMED" {% if selected_confidence == 'CONFIRMED' %}selected{% endif %}>Confirmed</option>
+                        <option value="HIGH" {% if selected_confidence == 'HIGH' %}selected{% endif %}>High</option>
+                        <option value="MEDIUM" {% if selected_confidence == 'MEDIUM' %}selected{% endif %}>Medium</option>
+                        <option value="LOW" {% if selected_confidence == 'LOW' %}selected{% endif %}>Low</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="target_id" class="form-select form-select-sm form-control-cyber">
+                        <option value="">All Targets</option>
+                        {% for tgt in targets %}
+                            <option value="{{ tgt.id }}" {% if selected_target_id == tgt.id %}selected{% endif %}>{{ tgt.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-outline-info btn-sm flex-grow-1">
+                        <i class="fa-solid fa-filter me-1"></i> Apply Filters
+                    </button>
+                    <a href="{{ url_for('scanner.index') }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+                </div>
+            </form>
+        </div>
+        <div class="card-body p-0">
+            {% if vulnerabilities %}
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0 align-middle">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th class="ps-4">Vulnerability Name</th>
+                                <th>Severity</th>
+                                <th>Confidence</th>
+                                <th>Category</th>
+                                <th>Affected URL / Parameter</th>
+                                <th>Module</th>
+                                <th>Detected At</th>
+                                <th class="text-end pe-4">Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for v in vulnerabilities %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <a href="{{ url_for('scanner.vulnerability_details', vuln_id=v.id) }}" class="fw-bold text-decoration-none text-light">
+                                            {{ v.title }}
+                                        </a>
+                                        <div class="text-secondary small font-monospace">{{ v.cwe_id or 'CWE-Unknown' }}</div>
+                                    </td>
+                                    <td>
+                                        {% if v.severity.upper() == 'CRITICAL' %}
+                                            <span class="badge bg-danger-subtle text-danger border border-danger">CRITICAL</span>
+                                        {% elif v.severity.upper() == 'HIGH' %}
+                                            <span class="badge bg-warning-subtle text-warning border border-warning">HIGH</span>
+                                        {% elif v.severity.upper() == 'MEDIUM' %}
+                                            <span class="badge bg-info-subtle text-info border border-info">MEDIUM</span>
+                                        {% elif v.severity.upper() == 'LOW' %}
+                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary">LOW</span>
+                                        {% else %}
+                                            <span class="badge bg-dark border border-secondary text-secondary">INFO</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if v.confidence.upper() == 'CONFIRMED' %}
+                                            <span class="badge bg-success-subtle text-success border border-success"><i class="fa-solid fa-check-double me-1"></i>CONFIRMED</span>
+                                        {% elif v.confidence.upper() == 'HIGH' %}
+                                            <span class="badge bg-info-subtle text-info border border-info">HIGH</span>
+                                        {% else %}
+                                            <span class="badge bg-dark border border-secondary text-secondary">{{ v.confidence }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-dark border border-secondary text-light">{{ v.vulnerability_type }}</span>
+                                    </td>
+                                    <td class="font-monospace small text-truncate" style="max-width: 250px;" title="{{ v.affected_url }}">
+                                        {{ v.affected_url }}
+                                        {% if v.parameter %}
+                                            <span class="text-warning">({{ v.parameter }})</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-secondary small font-monospace">{{ v.scanner_module }}</td>
+                                    <td class="text-secondary small">{{ v.created_at.strftime('%Y-%m-%d %H:%M') if v.created_at else '-' }}</td>
+                                    <td class="text-end pe-4">
+                                        <a href="{{ url_for('scanner.vulnerability_details', vuln_id=v.id) }}" class="btn btn-outline-info btn-sm">
+                                            <i class="fa-solid fa-arrow-right"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5 text-secondary">
+                    <i class="fa-solid fa-shield-check fa-3x mb-3 text-success"></i>
+                    <p class="mb-0">No matching vulnerabilities found. Launch a scan on a verified target above.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function launchScan() {
+    const sel = document.getElementById("target_select");
+    if (!sel || !sel.value) {
+        alert("Please select an authorized verified target.");
+        return;
+    }
+    const form = document.getElementById("startScanForm");
+    form.action = "/scanner/start/" + sel.value;
+    const btn = document.getElementById("launchBtn");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Executing Vulnerability Assessment...';
+    form.submit();
+}
+</script>
+{% endblock %}

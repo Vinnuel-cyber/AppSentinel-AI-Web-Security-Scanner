@@ -166,34 +166,37 @@ Open your browser to:
 
 Run the full automated test suite with verbose reporting:
 ```powershell
-pytest
+pytest -v
 ```
 To run specific test categories:
 ```powershell
-pytest tests/test_foundation.py
-pytest tests/test_health.py
-pytest tests/test_models.py
+pytest tests/test_vulnerability_scanner.py
+pytest tests/test_recon.py
+pytest tests/test_targets.py
+pytest tests/test_auth.py
+pytest tests/test_rbac.py
 ```
 
 ---
 
 ## 8. Security & Ethical Boundaries
 
-AppSentinel strictly enforces safe scanning principles:
-- **SSRF Prevention**: Loopback (`127.0.0.1`, `::1`), private ranges (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), and link-local addresses are rejected by default.
-- **Authorization**: Scans require registered targets with verified ownership tokens before active assessment.
-- **Non-Destructive Testing**: Test payloads are designed strictly for detection, never for data extraction or denial-of-service.
+AppSentinel strictly enforces safe, evidence-based defensive auditing principles:
+- **SSRF Prevention**: Loopback (`127.0.0.1`, `::1`), private subnets (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), link-local metadata addresses (`169.254.169.254`), and post-resolution DNS rebinding are blocked.
+- **Strict Authorization**: Scans require verified target ownership (via DNS TXT or HTTP well-known token verification) before reconnaissance or vulnerability assessment.
+- **Non-Destructive Testing**: Test payloads are designed strictly for detection (e.g., syntax probes and harmless markers), never for data extraction, credential harvesting, persistent alteration, or denial-of-service.
+- **Privacy by Design**: Sensitive session cookies are audited without storing raw values. Discovered API keys and credentials are automatically and immediately redacted.
 
 ---
 
 ## 9. Development Roadmap
 
 - [x] **V1: Project Foundation** (Core architecture, 10 models, configuration, health API, test suite)
-- [ ] **V2: Authentication & RBAC**
-- [ ] **V3: Professional Dark Cyber Dashboard**
-- [ ] **V4: Target Management & Verification**
-- [ ] **V5: Reconnaissance Engine**
-- [ ] **V6: Active & Passive Vulnerability Scanners**
+- [x] **V2: Authentication & RBAC** (User registration, login, session security, password hashing, role enforcement)
+- [x] **V3: Professional Dark Cyber Dashboard** (Dark SOC UI, metrics cards, Chart.js, statistics)
+- [x] **V4: Target Management & Verification** (SSRF validator, DNS TXT & HTTP well-known verification tokens, audit logs)
+- [x] **V5: Reconnaissance Engine** (Availability checker, passive tech detector, HTTP auditor, security headers, in-scope crawler, DNS analyzer, metadata parser)
+- [x] **V6: Advanced Vulnerability Scanner** (SQLi scanner, XSS scanner, Insecure cookies, Security misconfigurations, Information disclosure, Directory listing, Sensitive data exposure with redaction, Vulnerability Manager, local test lab)
 - [ ] **V7: OWASP Analyzer & Risk Engine**
 - [ ] **V8: AI Security Analyst**
 - [ ] **V9: Professional PDF Report Generator**
