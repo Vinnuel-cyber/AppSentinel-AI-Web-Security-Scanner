@@ -78,12 +78,56 @@ class TestingConfig(Config):
     SQLALCHEMY_ENGINE_OPTIONS = {}
 
 
+INSECURE_SECRET_KEYS = {
+    "",
+    "appsentinel-dev-secret-key-change-in-production",
+    "change-this-to-a-strong-random-secret-key-in-production",
+    "replace_with_a_cryptographically_secure_random_key_min_32_chars",
+    "appsentinel-docker-production-secret-key-change-me",
+    "secret",
+    "secret-key",
+    "secret_key",
+    "changeme",
+    "change-me",
+    "change_me",
+    "password",
+    "123456",
+    "your_secure_password",
+    "your-secret-key-here",
+    "your_secret_key_here",
+    "admin",
+    "default",
+}
+
+
 class ProductionConfig(Config):
     """Production configuration with hardened security settings."""
     DEBUG = False
     TESTING = False
     SESSION_COOKIE_SECURE = True
     REMEMBER_COOKIE_SECURE = True
+
+    # In production, SECRET_KEY must come strictly from the environment
+    # and must never fall back to a predictable development default
+    SECRET_KEY = os.getenv("SECRET_KEY", "")
+
+    @classmethod
+    def validate_production_security(cls):
+        """Validate that production environment has safe, unguessable secrets configured."""
+        secret = (cls.SECRET_KEY or "").strip()
+        if not secret:
+            raise ValueError(
+                "CRITICAL SECURITY CONFIGURATION ERROR: SECRET_KEY environment variable is required in production."
+            )
+        if secret.lower() in {k.lower() for k in INSECURE_SECRET_KEYS}:
+            raise ValueError(
+                "CRITICAL SECURITY CONFIGURATION ERROR: SECRET_KEY is set to a known insecure placeholder. "
+                "Generate a cryptographically strong secret key using `secrets.token_hex(32)`."
+            )
+        if len(secret) < 16:
+            raise ValueError(
+                "CRITICAL SECURITY CONFIGURATION ERROR: SECRET_KEY must be at least 16 characters long."
+            )
 
 
 config_by_name = {

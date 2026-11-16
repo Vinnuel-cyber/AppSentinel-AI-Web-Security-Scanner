@@ -52,7 +52,7 @@ FLASK BACKEND API (RESTful Endpoints, Flask-Login, CSRF)
 - **Security & Inspection**: Cryptography, Requests, BeautifulSoup4
 - **Reporting**: ReportLab 4.x / 5.x
 - **AI Integration**: OpenAI API (optional, with deterministic offline fallback)
-- **Testing**: Pytest, Pytest-Flask (238 automated tests)
+- **Testing**: Pytest, Pytest-Flask (253 automated tests)
 
 ---
 
@@ -162,30 +162,69 @@ AppSentinel/
 
 ## 6. Installation & Setup
 
-### 1. Clone Workspace & Activate Environment
+### Option A: Local Virtual Environment Setup
+
+#### 1. Clone Workspace & Activate Environment
 ```powershell
 python -m venv venv
 .\venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment
-Copy `.env.example` to `.env`:
+#### 2. Configure Environment & Generate Safe Secrets
+Copy `.env.example` to create your local `.env` configuration file:
 ```powershell
 Copy-Item .env.example .env
 ```
+Generate a strong cryptographic secret key and update `SECRET_KEY` in `.env`:
+```powershell
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+> [!IMPORTANT]
+> The `.env` file contains your local secrets and is strictly ignored by version control (`.gitignore`). Never commit real credentials to GitHub or shared repositories.
 
-### 3. Initialize Database Schema & Admin
+#### 3. Initialize Database Schema & Admin
 ```powershell
 flask init-db
-flask create-admin --username admin --email admin@appsentinel.local --password "AdminPassword123!"
+flask create-admin --username admin --email admin@appsentinel.local --password "YourStrongAdminPassword123!"
 ```
 
-### 4. Run Application
+#### 4. Run Application
 ```powershell
 python app.py
 ```
 Access the application at [http://127.0.0.1:5000/](http://127.0.0.1:5000/).
+
+---
+
+### Option B: Containerized Deployment via Docker Compose
+
+AppSentinel provides a production-hardened `docker-compose.yml` that isolates the web application and MySQL 8.0 database service.
+
+#### 1. Prepare Environment Secrets
+Docker Compose uses environment-variable interpolation with strict required-variable constraints (`${VAR:?error}`). Create `.env` from `.env.example` and supply mandatory production secrets:
+```bash
+cp .env.example .env
+```
+Ensure the following required variables are defined in `.env`:
+- `SECRET_KEY`: High-entropy session signing key (e.g. generated via `secrets.token_hex(32)`).
+- `DB_PASSWORD`: Strong password for the `appsentinel_user` database user.
+- `MYSQL_ROOT_PASSWORD`: Dedicated administrative password for MySQL container maintenance.
+
+> [!NOTE]
+> By default, the web interface binds to `127.0.0.1:5000` to prevent exposure on external network interfaces. Database health checks evaluate credentials via container environment variables without embedding passwords in YAML.
+
+#### 2. Launch Services
+```bash
+docker compose up --build -d
+```
+Docker Compose validates all required secrets before starting services. If any secret is omitted or empty, deployment terminates with an actionable diagnostic.
+
+#### 3. Verify Health & View Logs
+```bash
+docker compose ps
+docker compose logs -f web
+```
 
 ---
 
@@ -196,9 +235,9 @@ Run the full automated test suite:
 pytest -v
 ```
 
-All **238 tests** execute cleanly with zero failures:
+All **253 tests** execute cleanly with zero failures:
 ```
-====================== 238 passed in ~24s ======================
+====================== 253 passed in ~24s ======================
 ```
 
 ---

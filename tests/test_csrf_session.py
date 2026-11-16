@@ -53,3 +53,37 @@ def test_login_rate_limiter_brute_force_prevention(client, app):
 
     # Cleanup
     login_rate_limiter.reset("127.0.0.1:brute_target")
+
+
+def test_production_fails_safely_when_secret_key_missing_or_insecure(monkeypatch):
+    """Verify production environment strictly refuses to start with missing or insecure secret key."""
+    import pytest
+    from config import ProductionConfig
+
+    # 1. Test empty secret key
+    monkeypatch.setenv("SECRET_KEY", "")
+    ProductionConfig.SECRET_KEY = ""
+    with pytest.raises(ValueError, match="SECRET_KEY environment variable is required"):
+        create_app("production")
+
+    # 2. Test known default placeholder
+    monkeypatch.setenv("SECRET_KEY", "appsentinel-dev-secret-key-change-in-production")
+    ProductionConfig.SECRET_KEY = "appsentinel-dev-secret-key-change-in-production"
+    with pytest.raises(ValueError, match="known insecure placeholder"):
+        create_app("production")
+
+    # 3. Test short secret key (< 16 chars)
+    monkeypatch.setenv("SECRET_KEY", "short-secret")
+    ProductionConfig.SECRET_KEY = "short-secret"
+    with pytest.raises(ValueError, match="at least 16 characters"):
+        create_app("production")
+
+    # 4. Test development still works with default placeholder
+    dev_app = create_app("development")
+    assert dev_app.config["SECRET_KEY"] is not None
+
+    # 5. Restore valid secret for production
+    monkeypatch.setenv("SECRET_KEY", "a" * 32)
+    ProductionConfig.SECRET_KEY = "a" * 32
+    prod_app = create_app("production")
+    assert prod_app.config["SECRET_KEY"] == "a" * 32

@@ -32,7 +32,7 @@ def test_secret_redaction_aws_keys():
 
 def test_secret_redaction_private_keys():
     """Verify private key blocks are automatically redacted."""
-    raw = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA0Y123...\n-----END RSA PRIVATE KEY-----"
+    raw = ("-----BEGIN " + "RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA0Y123...\n-----END " + "RSA PRIVATE KEY-----")
     sanitized = PromptManager.sanitize_untrusted_text(raw)
     assert "BEGIN RSA PRIVATE KEY" not in sanitized
     assert "[REDACTED_PRIVATE_KEY]" in sanitized

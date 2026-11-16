@@ -17,7 +17,20 @@ def create_app(config_name: str = "default") -> Flask:
 
     # Load configuration
     config_class = config_by_name.get(config_name, config_by_name["default"])
+    if hasattr(config_class, "validate_production_security") and (
+        config_name == "production" or (isinstance(config_class, type) and issubclass(config_class, config_by_name.get("production", type)))
+    ):
+        config_class.validate_production_security()
     app.config.from_object(config_class)
+
+    # Validate active SECRET_KEY when running production
+    if config_name == "production" or (isinstance(config_class, type) and issubclass(config_class, config_by_name.get("production", type))):
+        from config import INSECURE_SECRET_KEYS
+        current_secret = (app.config.get("SECRET_KEY") or "").strip()
+        if not current_secret or current_secret.lower() in {k.lower() for k in INSECURE_SECRET_KEYS} or len(current_secret) < 16:
+            raise ValueError(
+                "CRITICAL SECURITY CONFIGURATION ERROR: Loaded SECRET_KEY is missing, empty, or an insecure placeholder in production."
+            )
 
     # Ensure required instance and report folders exist
     os.makedirs(app.config.get("INSTANCE_PATH", app.instance_path), exist_ok=True)

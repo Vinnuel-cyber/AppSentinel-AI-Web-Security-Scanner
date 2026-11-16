@@ -1,0 +1,31 @@
+# Version control
+.git
+.gitignore
+
+# Environment variables & secrets (NEVER BAKE INTO IMAGE)
+.env
+.env.*
+*.env
+
+# Python artifacts & virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+ENV/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local database instances & generated reports
+instance/
+*.sqlite3
+*.db
+appsentinel.db
+reports/*.pdf
+!reports/.gitkeep
+
+# IDEs
+.vscode/
+.idea/

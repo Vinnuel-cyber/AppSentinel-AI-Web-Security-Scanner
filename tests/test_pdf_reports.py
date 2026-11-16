@@ -523,9 +523,10 @@ def test_secret_redaction_comprehensive_matrix(client, pdf_test_context):
     with client.application.app_context():
         v1 = db.session.get(Vulnerability, ctx["v1_id"])
         ev = VulnerabilityEvidence.query.filter_by(vulnerability_id=v1.id).first()
+        sample_ghp = "ghp_" + ("1234567890" * 3 + "123456")
         ev.payload = "sk-proj-abc1234567890abcdefghijklmn"  # OpenAI key
         ev.evidence_snippet = "Authorization: Bearer mySecretBearerToken12345\nCookie: session=secretSessionCookie12345"
-        ev.request_dump = "ghp_123456789012345678901234567890123456\npassword: mySuperSecretPassword123"
+        ev.request_dump = f"{sample_ghp}\npassword: mySuperSecretPassword123"
         db.session.commit()
 
         data = SecurityDataCollector.collect_assessment_data(scan_id=ctx["scan_id"])
@@ -541,7 +542,7 @@ def test_secret_redaction_comprehensive_matrix(client, pdf_test_context):
         assert "secretSessionCookie12345" not in ev_data["snippet"]
         assert "session=[REDACTED_COOKIE]" in ev_data["snippet"]
 
-        assert "ghp_123456789012345678901234567890123456" not in ev_data["request"]
+        assert sample_ghp not in ev_data["request"]
         assert "[REDACTED_GITHUB_TOKEN]" in ev_data["request"]
 
         assert "mySuperSecretPassword123" not in ev_data["request"]

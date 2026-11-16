@@ -140,7 +140,7 @@ Administrator user 'admin' created successfully.
 
 ## 6. Running the Application
 
-### Development Server
+### Option A: Local Development Server
 ```bash
 python app.py
 ```
@@ -153,7 +153,50 @@ Access the application in your browser:
 - **Application URL**: `http://127.0.0.1:5000`
 - **Initial Login**:
   - Username: `admin`
-  - Password: `AdminPassword123!`
+  - Password: *(Password specified during `flask create-admin`)*
+
+---
+
+### Option B: Docker Compose Containerized Deployment
+
+AppSentinel includes an enterprise-hardened Docker Compose environment running isolated Flask and MySQL 8.0 services.
+
+#### 1. Safe Secret Generation
+Before starting Docker, generate strong, cryptographically secure keys:
+```bash
+# Generate SECRET_KEY
+python -c "import secrets; print('SECRET_KEY=' + secrets.token_hex(32))"
+
+# Generate DB_PASSWORD and MYSQL_ROOT_PASSWORD
+python -c "import secrets; print('DB_PASSWORD=' + secrets.token_urlsafe(24))"
+python -c "import secrets; print('MYSQL_ROOT_PASSWORD=' + secrets.token_urlsafe(24))"
+```
+
+#### 2. Populate `.env`
+Copy `.env.example` to `.env` and fill in the generated values:
+```bash
+cp .env.example .env
+```
+Docker Compose enforces required variable validation (`${VAR:?error_message}`). The following variables MUST be present in `.env`:
+- `SECRET_KEY`: Web session integrity key.
+- `DB_PASSWORD`: Application database password (used consistently by both `web` and `db` services).
+- `MYSQL_ROOT_PASSWORD`: MySQL server administrative password.
+
+> [!SECURITY]
+> - Never commit your `.env` file. It is explicitly ignored in `.gitignore`.
+> - By default, Docker binds the web interface to `127.0.0.1:5000` to prevent unintended exposure to public networks.
+> - The database health check references the container's internal environment variable `$MYSQL_ROOT_PASSWORD` at runtime without embedding plaintext passwords into `docker-compose.yml`.
+
+#### 3. Build & Run Services
+```bash
+docker compose up --build -d
+```
+
+Verify service status:
+```bash
+docker compose ps
+```
+Both `appsentinel_web` and `appsentinel_mysql` should indicate healthy/running states.
 
 ---
 
