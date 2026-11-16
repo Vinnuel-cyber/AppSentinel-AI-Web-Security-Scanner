@@ -89,15 +89,26 @@ def test_owasp_unauthenticated_redirect(client):
 
 
 def test_owasp_analyze_target_success(client, owasp_test_users, target_with_findings):
-    """Verify Alice can execute OWASP analysis and generate assessments and risk records."""
+    """Verify Alice can execute OWASP analysis in default 2025 and explicit 2021 modes."""
     target_id, v1_id, v2_id = target_with_findings
     client.post("/auth/login", json={"login_id": "alice_owasp", "password": "AliceSecure123!"})
 
+    # 1. Default analysis (OWASP 2025)
     resp = client.post(f"/owasp/analyze/{target_id}", json={})
     assert resp.status_code == 201
     data = resp.get_json()
+    assert data["framework_version"] == "2025"
     assert data["total_findings_mapped"] == 2
-    assert "A03:2021" in data["summary"]["category_distribution"]
+    assert "A05:2025" in data["summary"]["category_distribution"]
+    assert "A02:2025" in data["summary"]["category_distribution"]
+
+    # 2. Historical analysis (OWASP 2021)
+    resp_2021 = client.post(f"/owasp/analyze/{target_id}", json={"version": "2021"})
+    assert resp_2021.status_code == 201
+    data_2021 = resp_2021.get_json()
+    assert data_2021["framework_version"] == "2021"
+    assert "A03:2021" in data_2021["summary"]["category_distribution"]
+    assert "A05:2021" in data_2021["summary"]["category_distribution"]
 
     # Verify risk view for target
     risk_resp = client.get(f"/risk/target/{target_id}")

@@ -7,8 +7,8 @@ This document outlines AppSentinel's operational triage methodology implemented 
 ## 1. Motivation: Why CVSS Alone Is Insufficient
 
 CVSS provides an objective, standardized measure of a vulnerability's theoretical technical severity. However, raw CVSS scores do not account for operational realities:
-- An unconfirmed heuristic probe on an internal development sandbox does not warrant waking up an engineer at 2:00 AM, even if the theoretical flaw is SQL injection (CVSS 9.2).
-- Conversely, a medium-severity reflected XSS (CVSS 6.9) on a production banking portal with co-located missing CSP and unflagged session cookies presents an imminent compound threat.
+- An unconfirmed heuristic probe on an internal development sandbox does not warrant waking up an engineer at 2:00 AM, even if the theoretical flaw is SQL injection (CVSS 9.3).
+- Conversely, a medium-severity reflected XSS (CVSS 5.3) on a production banking portal with co-located missing CSP and unflagged session cookies presents an imminent compound threat.
 
 AppSentinel bridges this gap by calculating two complementary ratings:
 1. **CVSS v4.0 Score & Vector**: The objective technical severity benchmark.
@@ -54,3 +54,13 @@ The prioritization algorithm factors in four primary contextual signals:
 When multiple findings target the same endpoint or form compound attack chains (detected via `FindingCorrelator`):
 - **Synergistic Escalation**: Reflected XSS coupled with missing CSP and insecure cookies automatically elevates an asset's aggregate risk tier.
 - **Systemic Defect Escalation**: The same vulnerability repeated across 3+ endpoints signals a systemic architectural defect, escalating the asset's overall operational urgency.
+
+---
+
+## 4. Decoupling Principles & Anti-Corruption Rules
+
+To maintain scientific integrity and auditability, AppSentinel strictly enforces:
+1. **CVSS Independence**: The CVSS v4.0 mathematical score is strictly calculated from the 11 base metrics, Threat metric `E`, and Environmental metrics (`CR`, `IR`, `AR`, `M*`).
+2. **Confidence Separation**: Scanner detection confidence (`CONFIRMED`, `HIGH`, `MEDIUM`, `LOW`) influences only the operational queue priority (P1–P5), never the underlying CVSS numeric score or vector.
+3. **Target Environment Separation**: Deployment context (`Production`, `Staging`, `Development`) modifies triage SLAs without corrupting intrinsic vulnerability severity.
+4. **No Hidden Multipliers**: All priority adjustments follow the deterministic decision matrix without arbitrary undocumented scaling factors.

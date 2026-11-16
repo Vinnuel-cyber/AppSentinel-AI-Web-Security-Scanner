@@ -43,11 +43,13 @@ class OWASPService:
             raise OWASPServiceError("Target ownership is not verified.")
 
     @classmethod
-    def run_target_assessment(cls, target_id: int, user_id: int) -> OWASPAssessment:
+    def run_target_assessment(cls, target_id: int, user_id: int, framework_version: str = "2025") -> OWASPAssessment:
         """Execute full OWASP mapping, CVSS v4.0 scoring, correlation, and remediation analysis for a target."""
         target = db.session.get(Target, target_id)
         if not target:
             raise OWASPServiceError(f"Target #{target_id} not found.")
+
+        clean_version = "2021" if str(framework_version).strip() == "2021" else "2025"
 
         # Fetch all findings for this target
         vulnerabilities = Vulnerability.query.filter_by(target_id=target.id).all()
@@ -60,7 +62,7 @@ class OWASPService:
             target_id=target.id,
             user_id=user_id,
             framework_name=OWASPMapper.FRAMEWORK_NAME,
-            framework_version=OWASPMapper.FRAMEWORK_VERSION,
+            framework_version=clean_version,
             total_findings_mapped=len(vulnerabilities),
         )
         db.session.add(assessment)
@@ -79,32 +81,23 @@ class OWASPService:
                 scanner_module=vuln.scanner_module,
                 evidence=vuln.evidences.first().evidence_snippet if vuln.evidences.first() else "",
                 cwe_id=vuln.cwe_id or "",
+                version=clean_version,
             )
             category_counts[mapped["primary_category_code"]] += 1
 
-            # Update or create OWASPFindingMapping
-            mapping_record = OWASPFindingMapping.query.filter_by(vulnerability_id=vuln.id).first()
-            if not mapping_record:
-                mapping_record = OWASPFindingMapping(
-                    assessment_id=assessment.id,
-                    vulnerability_id=vuln.id,
-                    framework_version=mapped["framework_version"],
-                    primary_category_code=mapped["primary_category_code"],
-                    primary_category_name=mapped["primary_category_name"],
-                    secondary_category_code=mapped["secondary_category_code"],
-                    secondary_category_name=mapped["secondary_category_name"],
-                    confidence=mapped["confidence"],
-                    mapping_rationale=mapped["mapping_rationale"],
-                )
-                db.session.add(mapping_record)
-            else:
-                mapping_record.assessment_id = assessment.id
-                mapping_record.primary_category_code = mapped["primary_category_code"]
-                mapping_record.primary_category_name = mapped["primary_category_name"]
-                mapping_record.secondary_category_code = mapped["secondary_category_code"]
-                mapping_record.secondary_category_name = mapped["secondary_category_name"]
-                mapping_record.confidence = mapped["confidence"]
-                mapping_record.mapping_rationale = mapped["mapping_rationale"]
+            # Create assessment-specific OWASPFindingMapping (preserves historical versions)
+            mapping_record = OWASPFindingMapping(
+                assessment_id=assessment.id,
+                vulnerability_id=vuln.id,
+                framework_version=clean_version,
+                primary_category_code=mapped["primary_category_code"],
+                primary_category_name=mapped["primary_category_name"],
+                secondary_category_code=mapped["secondary_category_code"],
+                secondary_category_name=mapped["secondary_category_name"],
+                confidence=mapped["confidence"],
+                mapping_rationale=mapped["mapping_rationale"],
+            )
+            db.session.add(mapping_record)
 
             # B. CVSS v4.0 Risk Scoring
             scored = CVSS4RiskEngine.score_vulnerability(

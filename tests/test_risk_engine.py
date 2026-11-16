@@ -24,18 +24,18 @@ def test_cvss4_vector_validation_failure():
 
 
 def test_cvss4_score_calculation_critical():
-    """Verify critical network unauthenticated remote code execution / SQLi scores in Critical band (9.2)."""
+    """Verify critical network unauthenticated remote code execution / SQLi scores in Critical band (9.3)."""
     metrics = {"AV": "N", "AC": "L", "AT": "N", "PR": "N", "UI": "N", "VC": "H", "VI": "H", "VA": "H", "SC": "N", "SI": "N", "SA": "N"}
     score = CVSS4RiskEngine.calculate_score(metrics)
-    assert score == 9.2
+    assert score == 9.3
     assert CVSS4RiskEngine.get_severity_rating(score) == "Critical"
 
 
 def test_cvss4_score_calculation_high():
-    """Verify high severity key leak (VC:H) scores in High band (8.0)."""
+    """Verify high severity key leak (VC:H) scores in High band (8.7)."""
     metrics = {"AV": "N", "AC": "L", "AT": "N", "PR": "N", "UI": "N", "VC": "H", "VI": "N", "VA": "N", "SC": "N", "SI": "N", "SA": "N"}
     score = CVSS4RiskEngine.calculate_score(metrics)
-    assert score == 8.0
+    assert score == 8.7
     assert CVSS4RiskEngine.get_severity_rating(score) == "High"
 
 

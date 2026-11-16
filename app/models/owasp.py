@@ -12,7 +12,7 @@ class OWASPAssessment(db.Model):
     scan_id = db.Column(db.Integer, db.ForeignKey("scans.id", ondelete="SET NULL"), nullable=True, index=True)
 
     framework_name = db.Column(db.String(64), default="OWASP Top 10", nullable=False)
-    framework_version = db.Column(db.String(32), default="2021", nullable=False)
+    framework_version = db.Column(db.String(32), default="2025", nullable=False)
 
     total_findings_mapped = db.Column(db.Integer, default=0, nullable=False)
     top_category = db.Column(db.String(120), nullable=True)
@@ -57,7 +57,7 @@ class OWASPFindingMapping(db.Model):
     assessment_id = db.Column(db.Integer, db.ForeignKey("owasp_assessments.id", ondelete="CASCADE"), nullable=True, index=True)
     vulnerability_id = db.Column(db.Integer, db.ForeignKey("vulnerabilities.id", ondelete="CASCADE"), nullable=False, index=True)
 
-    framework_version = db.Column(db.String(32), default="2021", nullable=False)
+    framework_version = db.Column(db.String(32), default="2025", nullable=False)
     primary_category_code = db.Column(db.String(16), nullable=False, index=True)  # e.g., A03:2021
     primary_category_name = db.Column(db.String(120), nullable=False)  # e.g., Injection
 

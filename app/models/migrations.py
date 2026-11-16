@@ -65,6 +65,21 @@ def run_database_migrations(app) -> None:
                     db.session.execute(text("ALTER TABLE vulnerabilities ADD COLUMN scanner_module VARCHAR(64) DEFAULT 'vulnerability_manager'"))
                     db.session.commit()
 
+            # 4. OWASP Assessment table migrations
+            if "owasp_assessments" in table_names:
+                owasp_cols = {col["name"] for col in inspector.get_columns("owasp_assessments")}
+                if "framework_version" not in owasp_cols:
+                    app.logger.info("Migrating schema: adding framework_version column to owasp_assessments table.")
+                    db.session.execute(text("ALTER TABLE owasp_assessments ADD COLUMN framework_version VARCHAR(32) DEFAULT '2025'"))
+                    db.session.commit()
+
+            if "owasp_finding_mappings" in table_names:
+                map_cols = {col["name"] for col in inspector.get_columns("owasp_finding_mappings")}
+                if "framework_version" not in map_cols:
+                    app.logger.info("Migrating schema: adding framework_version column to owasp_finding_mappings table.")
+                    db.session.execute(text("ALTER TABLE owasp_finding_mappings ADD COLUMN framework_version VARCHAR(32) DEFAULT '2025'"))
+                    db.session.commit()
+
             # Create any newly introduced tables (such as target_audit_logs, recon tables)
             db.create_all()
         except Exception as exc:

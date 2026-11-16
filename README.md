@@ -104,12 +104,15 @@ AppSentinel/
 │
 ├── instance/                  # Local instance files and SQLite storage
 ├── reports/                   # Generated audit PDF reports
-└── tests/                     # Automated test suite (112 test cases)
+└── tests/                     # Automated test suite (136 test cases)
     ├── conftest.py            # Pytest fixtures and app factory harness
     ├── test_foundation.py     # Base app, security headers, CLI tests
     ├── test_health.py         # Health-check endpoint tests
     ├── test_models.py         # Database model relationships and validations
-    ├── test_owasp_mapper.py   # OWASP Top 10 mapping tests (V7)
+    ├── test_owasp_2025_mapper.py # OWASP Top 10:2025 mapping tests (V7.1)
+    ├── test_owasp_mapper.py   # OWASP Top 10:2021 backward-compatibility tests (V7)
+    ├── test_cvss_v4_reference_vectors.py # Official FIRST CVSS v4.0 reference tests (V7.1)
+    ├── test_historical_owasp_migrations.py # Multi-version assessment migration tests (V7.1)
     ├── test_risk_engine.py    # CVSS v4.0 scoring & vector validation tests (V7)
     ├── test_finding_correlator.py # Finding correlation & compound threat tests (V7)
     ├── test_remediation_engine.py # Defensive remediation guidance tests (V7)
@@ -186,6 +189,9 @@ pytest -v
 ```
 ### Running Specific Test Modules
 ```powershell
+pytest tests/test_cvss_v4_reference_vectors.py
+pytest tests/test_owasp_2025_mapper.py
+pytest tests/test_historical_owasp_migrations.py
 pytest tests/test_owasp_mapper.py
 pytest tests/test_risk_engine.py
 pytest tests/test_finding_correlator.py
@@ -219,6 +225,7 @@ AppSentinel strictly enforces safe, evidence-based defensive auditing principles
 - [x] **V5: Reconnaissance Engine** (Availability checker, passive tech detector, HTTP auditor, security headers, in-scope crawler, DNS analyzer, metadata parser)
 - [x] **V6: Advanced Vulnerability Scanner** (SQLi scanner, XSS scanner, Insecure cookies, Security misconfigurations, Information disclosure, Directory listing, Sensitive data exposure with redaction, Vulnerability Manager, local test lab)
 - [x] **V7: OWASP Analyzer & Risk Engine** (OWASP Top 10:2021 mapping, FIRST CVSS v4.0 scoring engine, operational priority P1-P5, finding correlation & compound threats, deterministic remediation advisories, SOC risk dashboards, 112 passing tests)
+- [x] **V7.1: OWASP 2025 Upgrade & CVSS v4.0 Validation** (Dual OWASP 2025/2021 support, full FIRST CVSS v4.0 specification audit with EQ1–EQ6 & Threat/Environmental metrics, 14 official reference vectors, historical assessment preservation, 136 passing tests)
 - [ ] **V8: AI Security Analyst**
 - [ ] **V9: Professional PDF Report Generator**
 - [ ] **V10: Final Integration & Docker Deployment**
