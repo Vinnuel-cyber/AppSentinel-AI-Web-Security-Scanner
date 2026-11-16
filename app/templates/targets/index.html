@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Target Management | AppSentinel{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h3 class="fw-bold mb-1 text-light">
+            <i class="fa-solid fa-crosshairs text-info me-2"></i> Authorized Target Inventory
+        </h3>
+        <p class="text-muted-cyber small mb-0">Registered web application targets authorized for security assessment.</p>
+    </div>
+    <div>
+        <a href="{{ url_for('targets.add') }}" class="btn btn-cyber-primary">
+            <i class="fa-solid fa-plus me-1"></i> Add New Target
+        </a>
+    </div>
+</div>
+
+<!-- Search & Filter Bar -->
+<div class="card card-cyber mb-4">
+    <div class="card-body p-3">
+        <form method="GET" action="{{ url_for('targets.index') }}" class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-dark border-secondary text-secondary">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input type="text" name="q" class="form-control form-control-cyber" placeholder="Search target name or domain..." value="{{ search_term }}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select form-control-cyber" onchange="this.form.submit()">
+                    <option value="" {% if not status_filter %}selected{% endif %}>All Verification States</option>
+                    <option value="verified" {% if status_filter == 'verified' %}selected{% endif %}>Verified Only</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending Verification</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="environment" class="form-select form-control-cyber" onchange="this.form.submit()">
+                    <option value="" {% if not env_filter %}selected{% endif %}>All Environments</option>
+                    <option value="Production" {% if env_filter == 'Production' %}selected{% endif %}>Production</option>
+                    <option value="Staging" {% if env_filter == 'Staging' %}selected{% endif %}>Staging</option>
+                    <option value="Development" {% if env_filter == 'Development' %}selected{% endif %}>Development</option>
+                </select>
+            </div>
+            <div class="col-md-1 d-grid">
+                <a href="{{ url_for('targets.index') }}" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Targets Table / Cards -->
+<div class="card card-cyber">
+    <div class="card-header-cyber d-flex justify-content-between align-items-center">
+        <span class="fw-bold text-light">Targets ({{ targets|length }})</span>
+        <span class="badge bg-dark border border-secondary text-info">Scope: Authorized Web Assets</span>
+    </div>
+    <div class="card-body p-0">
+        {% if targets %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0" style="background-color: transparent;">
+                    <thead>
+                        <tr class="border-secondary text-muted-cyber small">
+                            <th class="ps-4">Target Name</th>
+                            <th>Target Domain / URL</th>
+                            <th>Environment</th>
+                            <th>Ownership</th>
+                            <th>Registered</th>
+                            <th>Scans</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for target in targets %}
+                            <tr class="border-secondary align-middle">
+                                <td class="ps-4 fw-bold">
+                                    <a href="{{ url_for('targets.details', target_id=target.id) }}" class="text-light text-decoration-none">
+                                        <i class="fa-solid fa-globe me-2 text-info"></i>{{ target.name }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <code>{{ target.domain }}</code>
+                                    <a href="{{ target.target_url }}" target="_blank" rel="noopener noreferrer" class="text-secondary small ms-1" title="Open Target URL">
+                                        <i class="fa-solid fa-arrow-up-right-from-square fa-xs"></i>
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-dark border border-secondary text-light">
+                                        {{ target.environment }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if target.is_verified %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                            <i class="fa-solid fa-circle-check me-1"></i> Verified
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                                            <i class="fa-solid fa-clock me-1"></i> Pending
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="small text-muted-cyber">
+                                    {{ target.created_at.strftime('%Y-%m-%d') if target.created_at else '—' }}
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary-subtle text-secondary">
+                                        {{ target.scans.count() }} scans
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('targets.details', target_id=target.id) }}" class="btn btn-outline-info" title="View Target Details">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </a>
+                                        {% if not target.is_verified %}
+                                            <a href="{{ url_for('targets.verification_instructions', target_id=target.id) }}" class="btn btn-outline-warning" title="Verify Ownership">
+                                                <i class="fa-solid fa-shield-check"></i>
+                                            </a>
+                                        {% endif %}
+                                        <a href="{{ url_for('targets.edit', target_id=target.id) }}" class="btn btn-outline-secondary" title="Edit Metadata">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ target.id }}" title="Delete Target">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Delete Confirmation Modal -->
+                                    <div class="modal fade" id="deleteModal{{ target.id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content card-cyber border-danger text-start">
+                                                <div class="modal-header border-secondary">
+                                                    <h5 class="modal-title text-danger">
+                                                        <i class="fa-solid fa-triangle-exclamation me-2"></i> Confirm Target Deletion
+                                                    </h5>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p class="text-light">Are you sure you want to delete target <strong>{{ target.name }}</strong> (<code>{{ target.domain }}</code>)?</p>
+                                                    <p class="text-muted-cyber small mb-0">Historical scan findings and logs will be preserved, but the target will be deactivated from active scans.</p>
+                                                </div>
+                                                <div class="modal-footer border-secondary">
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                                    <form action="{{ url_for('targets.delete', target_id=target.id) }}" method="POST" class="d-inline">
+                                                        {{ delete_form.hidden_tag() }}
+                                                        <button type="submit" class="btn btn-danger btn-sm">
+                                                            <i class="fa-solid fa-trash-can me-1"></i> Delete Target
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-5">
+                <div class="mb-3">
+                    <span class="d-inline-flex p-4 rounded-circle bg-dark border border-secondary">
+                        <i class="fa-solid fa-shield-halved fa-3x text-secondary"></i>
+                    </span>
+                </div>
+                <h5 class="fw-bold text-light mb-1">No Targets Found</h5>
+                <p class="text-muted-cyber small mb-4" style="max-width: 420px; margin: 0 auto;">
+                    {% if search_term or status_filter or env_filter %}
+                        No registered web applications matched your filter criteria. Try resetting your search.
+                    {% else %}
+                        You haven't registered any authorized target web applications yet. Add your first website to start security monitoring.
+                    {% endif %}
+                </p>
+                <a href="{{ url_for('targets.add') }}" class="btn btn-cyber-primary btn-sm px-3">
+                    <i class="fa-solid fa-plus me-1"></i> Register Target
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

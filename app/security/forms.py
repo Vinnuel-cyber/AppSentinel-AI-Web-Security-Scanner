@@ -1,6 +1,6 @@
 import re
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, SelectField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError, Regexp
 from app.models.user import User
 
@@ -82,3 +82,88 @@ class LoginForm(FlaskForm):
 class LogoutForm(FlaskForm):
     """CSRF-protected logout form."""
     pass
+
+
+class AddTargetForm(FlaskForm):
+    name = StringField(
+        "Target Name",
+        validators=[
+            DataRequired(message="Target name is required."),
+            Length(min=2, max=120, message="Target name must be between 2 and 120 characters."),
+        ],
+    )
+    target_url = StringField(
+        "Website URL",
+        validators=[
+            DataRequired(message="Target URL is required."),
+            Length(min=7, max=512, message="URL length must be between 7 and 512 characters."),
+        ],
+    )
+    description = StringField(
+        "Description",
+        validators=[
+            Length(max=500, message="Description cannot exceed 500 characters."),
+        ],
+    )
+    environment = SelectField(
+        "Target Environment",
+        choices=[
+            ("Production", "Production"),
+            ("Staging", "Staging"),
+            ("Development", "Development"),
+        ],
+        default="Production",
+        validators=[DataRequired()],
+    )
+    authorization_confirmed = BooleanField(
+        "I confirm that I own this target or have documented authorization to perform security testing.",
+        validators=[
+            DataRequired(message="You must explicitly confirm testing authorization before adding a target."),
+        ],
+    )
+    submit = SubmitField("Add Target & Generate Token")
+
+
+class EditTargetForm(FlaskForm):
+    name = StringField(
+        "Target Name",
+        validators=[
+            DataRequired(message="Target name is required."),
+            Length(min=2, max=120, message="Target name must be between 2 and 120 characters."),
+        ],
+    )
+    description = StringField(
+        "Description",
+        validators=[
+            Length(max=500, message="Description cannot exceed 500 characters."),
+        ],
+    )
+    environment = SelectField(
+        "Target Environment",
+        choices=[
+            ("Production", "Production"),
+            ("Staging", "Staging"),
+            ("Development", "Development"),
+        ],
+        validators=[DataRequired()],
+    )
+    submit = SubmitField("Save Target Changes")
+
+
+class VerifyTargetForm(FlaskForm):
+    method = SelectField(
+        "Verification Method",
+        choices=[
+            ("http_well_known", "HTTP .well-known File (http://<domain>/.well-known/appsentinel-verification.txt)"),
+            ("dns_txt", "DNS TXT Record (appsentinel-verification=<token>)"),
+        ],
+        default="http_well_known",
+        validators=[DataRequired()],
+    )
+    submit = SubmitField("Verify Ownership Now")
+
+
+class DeleteTargetForm(FlaskForm):
+    """CSRF-protected target deletion form."""
+    pass
+

@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Verify Ownership | {{ target.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9 col-xl-8">
+        <div class="card card-cyber mb-4">
+            <div class="card-header-cyber d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="fw-bold mb-0 text-light">
+                        <i class="fa-solid fa-shield-check text-warning me-2"></i> Domain Ownership Verification
+                    </h4>
+                    <p class="text-muted-cyber small mb-0">Prove control of <code>{{ target.domain }}</code> before active scanning is permitted.</p>
+                </div>
+                <a href="{{ url_for('targets.details', target_id=target.id) }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Target Details
+                </a>
+            </div>
+            <div class="card-body p-4">
+                <!-- Token Details Box -->
+                <div class="card card-cyber p-3 bg-dark border-secondary mb-4">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                        <span class="text-muted-cyber small fw-semibold">Cryptographic Verification Token:</span>
+                        <span class="badge bg-secondary-subtle text-secondary small">
+                            Expires: {{ target.verification_expires_at.strftime('%Y-%m-%d %H:%M UTC') if target.verification_expires_at else 'Active' }}
+                        </span>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" class="form-control form-control-cyber font-monospace text-info" id="verificationToken" value="{{ target.verification_token }}" readonly>
+                        <button class="btn btn-outline-info" type="button" onclick="navigator.clipboard.writeText(document.getElementById('verificationToken').value); alert('Token copied to clipboard!');">
+                            <i class="fa-regular fa-copy me-1"></i> Copy Token
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Verification Methods Navigation Tabs -->
+                <ul class="nav nav-tabs border-secondary mb-3" id="verifyTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active text-light bg-dark border-secondary" id="http-tab" data-bs-toggle="tab" data-bs-target="#http-method" type="button" role="tab">
+                            <i class="fa-solid fa-file-code me-1 text-info"></i> Option 1: HTTP .well-known File (Fastest)
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link text-light bg-dark border-secondary" id="dns-tab" data-bs-toggle="tab" data-bs-target="#dns-method" type="button" role="tab">
+                            <i class="fa-solid fa-network-wired me-1 text-info"></i> Option 2: DNS TXT Record
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="verifyTabContent">
+                    <!-- Method 1: HTTP File -->
+                    <div class="tab-pane fade show active" id="http-method" role="tabpanel">
+                        <div class="p-3 rounded bg-dark border border-secondary mb-3">
+                            <h6 class="fw-bold text-light mb-2">Instructions:</h6>
+                            <ol class="small text-muted-cyber mb-3">
+                                <li>Create a plain text file named <code>appsentinel-verification.txt</code> in your web root's <code>.well-known</code> directory.</li>
+                                <li>Paste the exact verification token inside the file.</li>
+                                <li>Ensure the file is publicly accessible over HTTP at the following URL:</li>
+                            </ol>
+                            <div class="p-2 rounded bg-black border border-secondary font-monospace small text-info mb-2">
+                                http://{{ target.domain }}/.well-known/appsentinel-verification.txt
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Method 2: DNS TXT -->
+                    <div class="tab-pane fade" id="dns-method" role="tabpanel">
+                        <div class="p-3 rounded bg-dark border border-secondary mb-3">
+                            <h6 class="fw-bold text-light mb-2">Instructions:</h6>
+                            <ol class="small text-muted-cyber mb-3">
+                                <li>Sign in to your domain registrar or DNS management portal (Cloudflare, Route53, GoDaddy, etc.).</li>
+                                <li>Add a new <strong>TXT</strong> record with the following values:</li>
+                            </ol>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-dark small border-secondary">
+                                    <thead>
+                                        <tr class="text-muted-cyber">
+                                            <th>Record Type</th>
+                                            <th>Host / Name</th>
+                                            <th>Value / Content</th>
+                                            <th>TTL</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><span class="badge bg-info text-dark">TXT</span></td>
+                                            <td><code>@</code> (or <code>{{ target.domain }}</code>)</td>
+                                            <td><code>appsentinel-verification={{ target.verification_token }}</code></td>
+                                            <td>Auto / 300s</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="border-secondary my-4">
+
+                <!-- Verification Trigger Form -->
+                <form method="POST" action="{{ url_for('targets.verify', target_id=target.id) }}">
+                    {{ verify_form.hidden_tag() }}
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-8">
+                            <label for="method" class="form-label text-muted-cyber small fw-semibold">Choose method to validate:</label>
+                            {{ verify_form.method(class="form-select form-control-cyber") }}
+                        </div>
+                        <div class="col-md-4 d-grid mt-auto">
+                            <button type="submit" class="btn btn-cyber-primary">
+                                <i class="fa-solid fa-bolt me-1"></i> Verify Ownership Now
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -8,22 +8,48 @@ def run_database_migrations(app) -> None:
         try:
             inspector = inspect(db.engine)
             table_names = inspector.get_table_names()
-            
+
+            # 1. Users table migrations
             if "users" in table_names:
                 existing_cols = {col["name"] for col in inspector.get_columns("users")}
-                
-                # Check and add full_name column if missing
                 if "full_name" not in existing_cols:
                     app.logger.info("Migrating schema: adding full_name column to users table.")
                     db.session.execute(text("ALTER TABLE users ADD COLUMN full_name VARCHAR(120)"))
                     db.session.commit()
-                    
-                # Check and add last_login column if missing
                 if "last_login" not in existing_cols:
                     app.logger.info("Migrating schema: adding last_login column to users table.")
                     db.session.execute(text("ALTER TABLE users ADD COLUMN last_login DATETIME"))
                     db.session.commit()
-                    
+
+            # 2. Targets table migrations
+            if "targets" in table_names:
+                target_cols = {col["name"] for col in inspector.get_columns("targets")}
+                if "environment" not in target_cols:
+                    app.logger.info("Migrating schema: adding environment column to targets table.")
+                    db.session.execute(text("ALTER TABLE targets ADD COLUMN environment VARCHAR(32) DEFAULT 'Production'"))
+                    db.session.commit()
+                if "verification_token_hash" not in target_cols:
+                    app.logger.info("Migrating schema: adding verification_token_hash column to targets table.")
+                    db.session.execute(text("ALTER TABLE targets ADD COLUMN verification_token_hash VARCHAR(64)"))
+                    db.session.commit()
+                if "verification_status" not in target_cols:
+                    app.logger.info("Migrating schema: adding verification_status column to targets table.")
+                    db.session.execute(text("ALTER TABLE targets ADD COLUMN verification_status VARCHAR(32) DEFAULT 'PENDING_VERIFICATION'"))
+                    db.session.commit()
+                if "verification_expires_at" not in target_cols:
+                    app.logger.info("Migrating schema: adding verification_expires_at column to targets table.")
+                    db.session.execute(text("ALTER TABLE targets ADD COLUMN verification_expires_at DATETIME"))
+                    db.session.commit()
+                if "is_active" not in target_cols:
+                    app.logger.info("Migrating schema: adding is_active column to targets table.")
+                    db.session.execute(text("ALTER TABLE targets ADD COLUMN is_active BOOLEAN DEFAULT 1"))
+                    db.session.commit()
+                if "deleted_at" not in target_cols:
+                    app.logger.info("Migrating schema: adding deleted_at column to targets table.")
+                    db.session.execute(text("ALTER TABLE targets ADD COLUMN deleted_at DATETIME"))
+                    db.session.commit()
+
+            # Create any newly introduced tables (such as target_audit_logs)
             db.create_all()
         except Exception as exc:
             db.session.rollback()

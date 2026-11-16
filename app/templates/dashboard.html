@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Security Dashboard | AppSentinel{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h3 class="fw-bold mb-1 text-light">
+            <i class="fa-solid fa-chart-line text-info me-2"></i> Security Operations Dashboard
+        </h3>
+        <p class="text-muted-cyber small mb-0">Unified cybersecurity posture & real-time target inventory.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('targets.add') }}" class="btn btn-cyber-primary btn-sm px-3">
+            <i class="fa-solid fa-plus me-1"></i> Add Target
+        </a>
+        <a href="{{ url_for('targets.index') }}" class="btn btn-outline-info btn-sm px-3">
+            <i class="fa-solid fa-crosshairs me-1"></i> View All Targets
+        </a>
+    </div>
+</div>
+
+<!-- Metrics Statistics Grid -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-cyber p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted-cyber small fw-semibold">TOTAL TARGETS</div>
+                    <h2 class="fw-bold text-light mt-1 mb-0">{{ metrics.targets.total }}</h2>
+                </div>
+                <div class="p-3 rounded-circle bg-dark border border-secondary text-info">
+                    <i class="fa-solid fa-globe fa-xl"></i>
+                </div>
+            </div>
+            <div class="text-muted-cyber small mt-2">
+                <span class="text-success"><i class="fa-solid fa-check me-1"></i>{{ metrics.targets.verified }} Verified</span> &bull; 
+                <span class="text-warning">{{ metrics.targets.pending }} Pending</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-cyber p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted-cyber small fw-semibold">VERIFIED TARGETS</div>
+                    <h2 class="fw-bold text-success mt-1 mb-0">{{ metrics.targets.verified }}</h2>
+                </div>
+                <div class="p-3 rounded-circle bg-dark border border-secondary text-success">
+                    <i class="fa-solid fa-circle-check fa-xl"></i>
+                </div>
+            </div>
+            <div class="text-muted-cyber small mt-2">
+                Authorized for active scanning
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-cyber p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted-cyber small fw-semibold">TOTAL SCANS</div>
+                    <h2 class="fw-bold text-info mt-1 mb-0">{{ metrics.scans.total }}</h2>
+                </div>
+                <div class="p-3 rounded-circle bg-dark border border-secondary text-info">
+                    <i class="fa-solid fa-shield-virus fa-xl"></i>
+                </div>
+            </div>
+            <div class="text-muted-cyber small mt-2">
+                Audit history recorded
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-cyber p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted-cyber small fw-semibold">CRITICAL FINDINGS</div>
+                    <h2 class="fw-bold text-danger mt-1 mb-0">{{ metrics.vulnerabilities.critical }}</h2>
+                </div>
+                <div class="p-3 rounded-circle bg-dark border border-secondary text-danger">
+                    <i class="fa-solid fa-triangle-exclamation fa-xl"></i>
+                </div>
+            </div>
+            <div class="text-muted-cyber small mt-2">
+                Out of {{ metrics.vulnerabilities.total }} total findings
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Targets Table -->
+<div class="card card-cyber mb-4">
+    <div class="card-header-cyber d-flex justify-content-between align-items-center">
+        <span class="fw-bold text-light">Recent Target Registrations</span>
+        <a href="{{ url_for('targets.index') }}" class="text-info small text-decoration-none">
+            View All ({{ metrics.targets.total }}) <i class="fa-solid fa-arrow-right fa-xs"></i>
+        </a>
+    </div>
+    <div class="card-body p-0">
+        {% if recent_targets %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0" style="background-color: transparent;">
+                    <thead>
+                        <tr class="border-secondary text-muted-cyber small">
+                            <th class="ps-4">Target Name</th>
+                            <th>Domain</th>
+                            <th>Environment</th>
+                            <th>Ownership Status</th>
+                            <th class="text-end pe-4">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in recent_targets %}
+                            <tr class="border-secondary align-middle">
+                                <td class="ps-4 fw-bold">
+                                    <a href="{{ url_for('targets.details', target_id=t.id) }}" class="text-light text-decoration-none">
+                                        {{ t.name }}
+                                    </a>
+                                </td>
+                                <td><code>{{ t.domain }}</code></td>
+                                <td><span class="badge bg-dark border border-secondary">{{ t.environment }}</span></td>
+                                <td>
+                                    {% if t.is_verified %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                            <i class="fa-solid fa-circle-check me-1"></i> Verified
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                                            <i class="fa-solid fa-clock me-1"></i> Pending Verification
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="{{ url_for('targets.details', target_id=t.id) }}" class="btn btn-outline-info btn-sm">
+                                        View Details <i class="fa-solid fa-arrow-right fa-xs ms-1"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <!-- Proper Empty State -->
+            <div class="text-center py-5">
+                <div class="mb-3">
+                    <span class="d-inline-flex p-3 rounded-circle bg-dark border border-secondary text-secondary">
+                        <i class="fa-solid fa-crosshairs fa-2xl"></i>
+                    </span>
+                </div>
+                <h5 class="fw-bold text-light mb-1">No Targets Registered Yet</h5>
+                <p class="text-muted-cyber small mb-3">Add your first target to monitor security posture and schedule scans.</p>
+                <a href="{{ url_for('targets.add') }}" class="btn btn-cyber-primary btn-sm px-4">
+                    <i class="fa-solid fa-plus me-1"></i> Add First Target
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

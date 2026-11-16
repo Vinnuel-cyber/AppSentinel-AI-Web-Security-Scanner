@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Target | AppSentinel{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card card-cyber">
+            <div class="card-header-cyber d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="fw-bold mb-0 text-light">
+                        <i class="fa-solid fa-pen-to-square text-info me-2"></i> Edit Target Settings
+                    </h4>
+                    <p class="text-muted-cyber small mb-0">{{ target.domain }} (#{{ target.id }})</p>
+                </div>
+                <a href="{{ url_for('targets.details', target_id=target.id) }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Back to Details
+                </a>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('targets.edit', target_id=target.id) }}" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted-cyber small fw-semibold">Target Domain</label>
+                        <input type="text" class="form-control form-control-cyber" value="{{ target.domain }}" disabled>
+                        <div class="form-text text-muted-cyber small">Domain is locked to prevent token spoofing. To assess a different domain, register it as a new target.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="name" class="form-label text-muted-cyber small fw-semibold">Target Name</label>
+                        {{ form.name(class="form-control form-control-cyber" + (" is-invalid" if form.name.errors else ""), id="name") }}
+                        {% for error in form.name.errors %}
+                            <div class="invalid-feedback d-block small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="environment" class="form-label text-muted-cyber small fw-semibold">Environment</label>
+                        {{ form.environment(class="form-select form-control-cyber" + (" is-invalid" if form.environment.errors else ""), id="environment") }}
+                        {% for error in form.environment.errors %}
+                            <div class="invalid-feedback d-block small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="description" class="form-label text-muted-cyber small fw-semibold">Description</label>
+                        {{ form.description(class="form-control form-control-cyber", id="description") }}
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('targets.details', target_id=target.id) }}" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                        {{ form.submit(class="btn btn-cyber-primary btn-sm px-4") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

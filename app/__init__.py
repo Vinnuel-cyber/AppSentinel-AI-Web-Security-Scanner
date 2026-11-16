@@ -34,10 +34,7 @@ def create_app(config_name: str = "default") -> Flask:
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
     login_manager.login_message_category = "warning"
-
-    # Initialize CSRF (disabled in testing config)
-    if not app.config.get("TESTING", False):
-        csrf.init_app(app)
+    csrf.init_app(app)
 
     @login_manager.user_loader
     def load_user(user_id):

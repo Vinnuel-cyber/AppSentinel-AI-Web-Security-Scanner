@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}{{ target.name }} | Target Details{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h3 class="fw-bold mb-0 text-light">{{ target.name }}</h3>
+            {% if target.is_verified %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                    <i class="fa-solid fa-circle-check me-1"></i> Verified Owner
+                </span>
+            {% else %}
+                <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                    <i class="fa-solid fa-clock me-1"></i> Pending Verification
+                </span>
+            {% endif %}
+            <span class="badge bg-dark border border-secondary text-info">{{ target.environment }}</span>
+        </div>
+        <p class="text-muted-cyber small mb-0"><code>{{ target.target_url }}</code> &bull; Registered {{ target.created_at.strftime('%B %d, %Y') }}</p>
+    </div>
+    <div class="d-flex gap-2">
+        {% if not target.is_verified %}
+            <a href="{{ url_for('targets.verification_instructions', target_id=target.id) }}" class="btn btn-warning btn-sm">
+                <i class="fa-solid fa-shield-check me-1"></i> Verify Ownership
+            </a>
+        {% endif %}
+        <a href="{{ url_for('targets.edit', target_id=target.id) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+        </a>
+        <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteTargetModal">
+            <i class="fa-solid fa-trash-can me-1"></i> Delete
+        </button>
+    </div>
+</div>
+
+<!-- Target Metadata Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card card-cyber p-3">
+            <div class="text-muted-cyber small">Domain Hostname</div>
+            <div class="fw-bold text-light mt-1"><code>{{ target.domain }}</code></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-cyber p-3">
+            <div class="text-muted-cyber small">Verification State</div>
+            <div class="fw-bold mt-1">
+                {% if target.is_verified %}
+                    <span class="text-success"><i class="fa-solid fa-check-double me-1"></i> Verified ({{ target.verification_method }})</span>
+                {% else %}
+                    <span class="text-warning"><i class="fa-solid fa-hourglass-half me-1"></i> Action Required</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-cyber p-3">
+            <div class="text-muted-cyber small">Total Security Scans</div>
+            <div class="fw-bold text-light mt-1">{{ target.scans.count() }} execution(s)</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-cyber p-3">
+            <div class="text-muted-cyber small">Verification Token Expiry</div>
+            <div class="fw-bold text-light mt-1 small">
+                {{ target.verification_expires_at.strftime('%Y-%m-%d %H:%M') if target.verification_expires_at else 'Active' }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Verification Warning Panel if Unverified -->
+{% if not target.is_verified %}
+    <div class="card card-cyber border-warning mb-4">
+        <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h5 class="fw-bold text-warning mb-1">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i> Ownership Verification Required
+                </h5>
+                <p class="text-muted-cyber small mb-0">Active vulnerability scanning is locked until domain ownership is confirmed through DNS TXT or HTTP .well-known token placement.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('targets.verification_instructions', target_id=target.id) }}" class="btn btn-warning btn-sm">
+                    View Token & Instructions <i class="fa-solid fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Audit History & Scans Tabs -->
+<div class="card card-cyber">
+    <div class="card-header-cyber">
+        <span class="fw-bold text-light">Target Audit Trail & Activity Logs</span>
+    </div>
+    <div class="card-body p-0">
+        {% if audit_logs %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0" style="background-color: transparent;">
+                    <thead>
+                        <tr class="border-secondary text-muted-cyber small">
+                            <th class="ps-4">Timestamp</th>
+                            <th>Action</th>
+                            <th>Operator</th>
+                            <th class="pe-4">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in audit_logs %}
+                            <tr class="border-secondary align-middle">
+                                <td class="ps-4 text-muted-cyber small">
+                                    {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC') if log.timestamp else '—' }}
+                                </td>
+                                <td>
+                                    <span class="badge {{ 'bg-success-subtle text-success' if 'SUCCESS' in log.action else 'bg-warning-subtle text-warning' if 'FAILED' in log.action else 'bg-dark border border-secondary text-info' }}">
+                                        {{ log.action }}
+                                    </span>
+                                </td>
+                                <td class="small text-light">User #{{ log.user_id }}</td>
+                                <td class="pe-4 text-muted-cyber small">{{ log.details or '—' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="p-4 text-center text-muted-cyber small">No audit activity logged for this target.</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteTargetModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content card-cyber border-danger">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-danger">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i> Confirm Target Deletion
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-light">Are you sure you want to delete target <strong>{{ target.name }}</strong> (<code>{{ target.domain }}</code>)?</p>
+                <p class="text-muted-cyber small mb-0">Historical scan records will be preserved for compliance and audit integrity.</p>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('targets.delete', target_id=target.id) }}" method="POST">
+                    {{ delete_form.hidden_tag() }}
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        <i class="fa-solid fa-trash-can me-1"></i> Delete Target
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
