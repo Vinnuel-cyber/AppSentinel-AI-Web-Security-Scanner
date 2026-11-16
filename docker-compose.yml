@@ -1,0 +1,44 @@
+services:
+  web:
+    build: .
+    container_name: appsentinel_web
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=appsentinel-docker-production-secret-key-change-me
+      - DB_USER=appsentinel_user
+      - DB_PASSWORD=AppSentinel_Prod_2026!Secure
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_NAME=appsentinel_db
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./reports:/app/reports
+      - ./instance:/app/instance
+
+  db:
+    image: mysql:8.0
+    container_name: appsentinel_mysql
+    restart: unless-stopped
+    command: --default-authentication-plugin=caching_sha2_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: Root_MySQL_2026!SecurePassword
+      MYSQL_DATABASE: appsentinel_db
+      MYSQL_USER: appsentinel_user
+      MYSQL_PASSWORD: AppSentinel_Prod_2026!Secure
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pRoot_MySQL_2026!SecurePassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mysql_data:
