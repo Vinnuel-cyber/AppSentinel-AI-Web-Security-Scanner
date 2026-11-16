@@ -46,6 +46,7 @@ def create_app(config_name: str = "default") -> Flask:
     from app.routes.dashboard import dashboard_bp
     from app.routes.targets import targets_bp
     from app.routes.scanner import scanner_bp
+    from app.routes.recon import recon_bp
     from app.routes.reports import reports_bp
 
     app.register_blueprint(health_bp)
@@ -53,6 +54,7 @@ def create_app(config_name: str = "default") -> Flask:
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(targets_bp)
     app.register_blueprint(scanner_bp)
+    app.register_blueprint(recon_bp)
     app.register_blueprint(reports_bp)
 
     # Security Headers Hook

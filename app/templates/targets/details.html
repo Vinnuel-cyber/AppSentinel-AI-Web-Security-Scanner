@@ -21,7 +21,17 @@
         <p class="text-muted-cyber small mb-0"><code>{{ target.target_url }}</code> &bull; Registered {{ target.created_at.strftime('%B %d, %Y') }}</p>
     </div>
     <div class="d-flex gap-2">
-        {% if not target.is_verified %}
+        {% if target.is_verified %}
+            <form action="{{ url_for('recon.start_scan', target_id=target.id) }}" method="POST" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-cyber-primary btn-sm">
+                    <i class="fa-solid fa-radar me-1"></i> Start Recon Scan
+                </button>
+            </form>
+            <a href="{{ url_for('recon.history', target_id=target.id) }}" class="btn btn-outline-info btn-sm">
+                <i class="fa-solid fa-clock-rotate-left me-1"></i> Recon History
+            </a>
+        {% else %}
             <a href="{{ url_for('targets.verification_instructions', target_id=target.id) }}" class="btn btn-warning btn-sm">
                 <i class="fa-solid fa-shield-check me-1"></i> Verify Ownership
             </a>

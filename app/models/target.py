@@ -59,6 +59,7 @@ class Target(db.Model):
 
     # Relationships
     scans = db.relationship("Scan", backref="target", lazy="dynamic", cascade="all, delete-orphan")
+    recon_scans = db.relationship("ReconScan", backref="target", lazy="dynamic", cascade="all, delete-orphan")
     audit_logs = db.relationship("TargetAuditLog", backref="target", lazy="dynamic", cascade="all, delete-orphan")
 
     def __init__(self, **kwargs):

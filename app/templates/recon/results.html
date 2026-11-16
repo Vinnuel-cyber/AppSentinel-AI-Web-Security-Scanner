@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+
+{% block title %}Recon Results #{{ scan.id }} | AppSentinel{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb & Actions -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{{ url_for('recon.index') }}" class="text-info text-decoration-none">Reconnaissance</a></li>
+                    <li class="breadcrumb-item active text-light">Scan #{{ scan.id }}</li>
+                </ol>
+            </nav>
+            <h1 class="h3 fw-bold mb-1 text-light">
+                <i class="fa-solid fa-file-shield text-info me-2"></i>Reconnaissance Report #{{ scan.id }}
+            </h1>
+            <div class="d-flex align-items-center gap-3 text-secondary small">
+                <span><i class="fa-solid fa-bullseye me-1"></i> Target: <strong class="text-light">{{ target.name }}</strong> ({{ target.domain }})</span>
+                <span><i class="fa-solid fa-calendar me-1"></i> {{ scan.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') if scan.created_at else '-' }}</span>
+                <span><i class="fa-solid fa-stopwatch me-1"></i> Duration: {{ scan.duration_seconds }}s</span>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('recon.findings_json', scan_id=scan.id) }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-code me-1"></i> Export JSON
+            </a>
+            <a href="{{ url_for('recon.history', target_id=target.id) }}" class="btn btn-outline-info btn-sm">
+                <i class="fa-solid fa-history me-1"></i> Target History
+            </a>
+            <form action="{{ url_for('recon.start_scan', target_id=target.id) }}" method="POST" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-cyber-primary btn-sm">
+                    <i class="fa-solid fa-rotate-right me-1"></i> Rescan
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Overview Stat Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card card-cyber p-3">
+                <div class="text-secondary small fw-bold text-uppercase mb-1">Availability Status</div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <span class="h4 mb-0 fw-bold">
+                        {% if scan.availability_status == 'ONLINE' %}
+                            <span class="text-success"><i class="fa-solid fa-circle-check me-2"></i>ONLINE</span>
+                        {% elif scan.availability_status == 'BLOCKED' %}
+                            <span class="text-warning"><i class="fa-solid fa-shield me-2"></i>BLOCKED</span>
+                        {% elif scan.availability_status == 'TIMEOUT' %}
+                            <span class="text-secondary"><i class="fa-solid fa-clock me-2"></i>TIMEOUT</span>
+                        {% elif scan.availability_status == 'SSL_ERROR' %}
+                            <span class="text-danger"><i class="fa-solid fa-lock me-2"></i>SSL ERROR</span>
+                        {% else %}
+                            <span class="text-danger">{{ scan.availability_status }}</span>
+                        {% endif %}
+                    </span>
+                    <span class="badge bg-dark border border-secondary text-info">HTTP {{ scan.http_status or '-' }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-cyber p-3">
+                <div class="text-secondary small fw-bold text-uppercase mb-1">Latency / IP</div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <span class="h4 mb-0 fw-bold text-info">{{ scan.response_time_ms }} ms</span>
+                    <span class="badge bg-dark border border-secondary text-light font-monospace">{{ scan.ip_address or 'Unknown' }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-cyber p-3">
+                <div class="text-secondary small fw-bold text-uppercase mb-1">Technologies Detected</div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <span class="h4 mb-0 fw-bold text-light">{{ technologies|length }}</span>
+                    <span class="badge bg-dark border border-secondary text-info">Passive Signatures</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-cyber p-3">
+                <div class="text-secondary small fw-bold text-uppercase mb-1">Endpoints Discovered</div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <span class="h4 mb-0 fw-bold text-light">{{ endpoints|length }}</span>
+                    <span class="badge bg-dark border border-secondary text-success">In-Scope</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Tabbed Navigation -->
+    <div class="card card-cyber">
+        <div class="card-header-cyber p-0 border-bottom border-secondary">
+            <ul class="nav nav-tabs card-header-tabs m-0 border-0" id="reconTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active px-4 py-3 text-light fw-bold" id="tab-overview" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                        <i class="fa-solid fa-gauge-high me-2 text-info"></i>Overview
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link px-4 py-3 text-light fw-bold" id="tab-tech" data-bs-toggle="tab" data-bs-target="#technologies" type="button" role="tab">
+                        <i class="fa-solid fa-microchip me-2 text-warning"></i>Technologies
+                        <span class="badge bg-dark border border-secondary ms-1">{{ technologies|length }}</span>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link px-4 py-3 text-light fw-bold" id="tab-headers" data-bs-toggle="tab" data-bs-target="#headers" type="button" role="tab">
+                        <i class="fa-solid fa-shield-virus me-2 text-danger"></i>Security Headers
+                        <span class="badge bg-dark border border-secondary ms-1">{{ security_headers|length }}</span>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link px-4 py-3 text-light fw-bold" id="tab-endpoints" data-bs-toggle="tab" data-bs-target="#endpoints" type="button" role="tab">
+                        <i class="fa-solid fa-diagram-project me-2 text-success"></i>Endpoints
+                        <span class="badge bg-dark border border-secondary ms-1">{{ endpoints|length }}</span>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link px-4 py-3 text-light fw-bold" id="tab-dns" data-bs-toggle="tab" data-bs-target="#dns" type="button" role="tab">
+                        <i class="fa-solid fa-server me-2 text-info"></i>DNS Records
+                        <span class="badge bg-dark border border-secondary ms-1">{{ dns_records|length }}</span>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link px-4 py-3 text-light fw-bold" id="tab-meta" data-bs-toggle="tab" data-bs-target="#metadata" type="button" role="tab">
+                        <i class="fa-solid fa-tags me-2 text-primary"></i>Metadata & OpenGraph
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body p-4">
+            <div class="tab-content" id="reconTabsContent">
+                <!-- 1. Overview Tab -->
+                <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                    <div class="row g-4">
+                        <div class="col-lg-6">
+                            <h5 class="text-light fw-bold mb-3"><i class="fa-solid fa-circle-info text-info me-2"></i>Destination & Route Details</h5>
+                            <table class="table table-dark table-sm mb-0">
+                                <tbody>
+                                    <tr>
+                                        <td class="text-secondary" style="width: 35%;">Target URL</td>
+                                        <td class="font-monospace text-info">{{ target.target_url }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-secondary">Final Resolved URL</td>
+                                        <td class="font-monospace text-light">{{ scan.final_url or target.target_url }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-secondary">Primary IP Address</td>
+                                        <td class="font-monospace text-light">{{ scan.ip_address or 'Unresolved' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-secondary">HTTP Status Code</td>
+                                        <td>
+                                            {% if scan.http_status %}
+                                                <span class="badge bg-dark border border-secondary text-info">{{ scan.http_status }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">None</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-secondary">Response Time</td>
+                                        <td class="text-light">{{ scan.response_time_ms }} ms</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-secondary">Scan Status</td>
+                                        <td><span class="badge bg-success-subtle text-success border border-success">{{ scan.status }}</span></td>
+                                    </tr>
+                                    {% if scan.error_message %}
+                                        <tr>
+                                            <td class="text-danger">Engine Note</td>
+                                            <td class="text-danger small">{{ scan.error_message }}</td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="col-lg-6">
+                            <h5 class="text-light fw-bold mb-3"><i class="fa-solid fa-list-check text-success me-2"></i>Reconnaissance Checklist</h5>
+                            <ul class="list-group list-group-flush bg-transparent">
+                                <li class="list-group-item bg-transparent text-light border-secondary d-flex justify-content-between align-items-center">
+                                    <span><i class="fa-solid fa-check text-success me-2"></i>Availability Engine</span>
+                                    <span class="badge bg-success">{{ scan.availability_status }}</span>
+                                </li>
+                                <li class="list-group-item bg-transparent text-light border-secondary d-flex justify-content-between align-items-center">
+                                    <span><i class="fa-solid fa-check text-success me-2"></i>Security Headers Audited</span>
+                                    <span class="badge bg-dark border border-secondary">{{ security_headers|length }} Evaluated</span>
+                                </li>
+                                <li class="list-group-item bg-transparent text-light border-secondary d-flex justify-content-between align-items-center">
+                                    <span><i class="fa-solid fa-check text-success me-2"></i>Passive Fingerprints</span>
+                                    <span class="badge bg-dark border border-secondary">{{ technologies|length }} Technologies</span>
+                                </li>
+                                <li class="list-group-item bg-transparent text-light border-secondary d-flex justify-content-between align-items-center">
+                                    <span><i class="fa-solid fa-check text-success me-2"></i>DNS Records Enumerated</span>
+                                    <span class="badge bg-dark border border-secondary">{{ dns_records|length }} Records</span>
+                                </li>
+                                <li class="list-group-item bg-transparent text-light border-secondary d-flex justify-content-between align-items-center">
+                                    <span><i class="fa-solid fa-check text-success me-2"></i>Safe In-Scope Endpoints</span>
+                                    <span class="badge bg-dark border border-secondary">{{ endpoints|length }} Discovered</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Technologies Tab -->
+                <div class="tab-pane fade" id="technologies" role="tabpanel">
+                    <h5 class="text-light fw-bold mb-3">Detected Technology Fingerprints</h5>
+                    {% if technologies %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover align-middle mb-0">
+                                <thead class="table-secondary">
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Technology</th>
+                                        <th>Version</th>
+                                        <th>Confidence</th>
+                                        <th>Evidence</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for tech in technologies %}
+                                        <tr>
+                                            <td>
+                                                <span class="badge bg-dark border border-secondary text-uppercase text-info">{{ tech.category }}</span>
+                                            </td>
+                                            <td class="fw-bold text-light">{{ tech.name }}</td>
+                                            <td class="font-monospace text-secondary">{{ tech.version or 'Undetermined' }}</td>
+                                            <td>
+                                                {% if tech.confidence == 'HIGH' %}
+                                                    <span class="badge bg-success-subtle text-success border border-success">HIGH</span>
+                                                {% elif tech.confidence == 'MEDIUM' %}
+                                                    <span class="badge bg-warning-subtle text-warning border border-warning">MEDIUM</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">LOW</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="small text-secondary font-monospace">{{ tech.evidence }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 text-secondary">
+                            <i class="fa-solid fa-eye-slash fa-2x mb-2"></i>
+                            <p class="mb-0">No distinct framework or server signatures detected from passive inspection.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- 3. Security Headers Tab -->
+                <div class="tab-pane fade" id="headers" role="tabpanel">
+                    <h5 class="text-light fw-bold mb-3">Defensive HTTP Response Headers Audit</h5>
+                    {% if security_headers %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover align-middle mb-0">
+                                <thead class="table-secondary">
+                                    <tr>
+                                        <th>Header Name</th>
+                                        <th>Status</th>
+                                        <th>Risk</th>
+                                        <th>Observed Value</th>
+                                        <th>Remediation Advice</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for h in security_headers %}
+                                        <tr>
+                                            <td class="fw-bold text-light font-monospace">{{ h.header_name }}</td>
+                                            <td>
+                                                {% if h.status == 'OPTIMAL' %}
+                                                    <span class="badge bg-success"><i class="fa-solid fa-check me-1"></i>OPTIMAL</span>
+                                                {% elif h.status == 'SUBOPTIMAL' %}
+                                                    <span class="badge bg-warning text-dark"><i class="fa-solid fa-triangle-exclamation me-1"></i>SUBOPTIMAL</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger"><i class="fa-solid fa-xmark me-1"></i>MISSING</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if h.risk_level == 'HIGH' %}
+                                                    <span class="badge bg-danger-subtle text-danger border border-danger">HIGH</span>
+                                                {% elif h.risk_level == 'MEDIUM' %}
+                                                    <span class="badge bg-warning-subtle text-warning border border-warning">MEDIUM</span>
+                                                {% elif h.risk_level == 'LOW' %}
+                                                    <span class="badge bg-info-subtle text-info border border-info">LOW</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">INFO</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="font-monospace small text-truncate" style="max-width: 280px;" title="{{ h.value }}">
+                                                {{ h.value or 'Not Set' }}
+                                            </td>
+                                            <td class="small text-secondary">{{ h.remediation or 'Header configuration meets security recommendations.' }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- 4. Endpoints Tab -->
+                <div class="tab-pane fade" id="endpoints" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="text-light fw-bold mb-0">Discovered In-Scope Endpoints ({{ endpoints|length }})</h5>
+                        <span class="badge bg-dark border border-secondary text-secondary">Safe Discovery Only</span>
+                    </div>
+                    {% if endpoints %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover align-middle mb-0">
+                                <thead class="table-secondary">
+                                    <tr>
+                                        <th>Method</th>
+                                        <th>URL</th>
+                                        <th>Discovery Source</th>
+                                        <th>Content Type</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ep in endpoints %}
+                                        <tr>
+                                            <td>
+                                                <span class="badge bg-dark border border-info text-info font-monospace">{{ ep.http_method }}</span>
+                                            </td>
+                                            <td class="font-monospace small text-break text-light">
+                                                <a href="{{ ep.url }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-light">
+                                                    {{ ep.url }} <i class="fa-solid fa-arrow-up-right-from-square text-secondary ms-1 small"></i>
+                                                </a>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-dark border border-secondary text-secondary">{{ ep.source }}</span>
+                                            </td>
+                                            <td class="text-secondary small">{{ ep.content_type or '-' }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 text-secondary">
+                            <p class="mb-0">No endpoints found.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- 5. DNS Tab -->
+                <div class="tab-pane fade" id="dns" role="tabpanel">
+                    <h5 class="text-light fw-bold mb-3">Public DNS Records ({{ target.domain }})</h5>
+                    {% if dns_records %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover align-middle mb-0">
+                                <thead class="table-secondary">
+                                    <tr>
+                                        <th>Record Type</th>
+                                        <th>Host Name</th>
+                                        <th>Record Value</th>
+                                        <th>TTL</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for rec in dns_records %}
+                                        <tr>
+                                            <td><span class="badge bg-dark border border-info text-info">{{ rec.record_type }}</span></td>
+                                            <td class="font-monospace text-light">{{ rec.name }}</td>
+                                            <td class="font-monospace text-secondary small text-break">{{ rec.value }}</td>
+                                            <td class="text-secondary small">{{ rec.ttl or '-' }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 text-secondary">
+                            <p class="mb-0">No public DNS records resolved or host is on a simulated/mock network.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- 6. Metadata Tab -->
+                <div class="tab-pane fade" id="metadata" role="tabpanel">
+                    <h5 class="text-light fw-bold mb-3">Website Metadata & OpenGraph Tags</h5>
+                    {% if metadata %}
+                        <table class="table table-dark table-sm mb-4">
+                            <tbody>
+                                <tr>
+                                    <td class="text-secondary" style="width: 25%;">Page Title</td>
+                                    <td class="text-light fw-bold">{{ metadata.title or 'None' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-secondary">Meta Description</td>
+                                    <td class="text-light">{{ metadata.description or 'None' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-secondary">Generator Tag</td>
+                                    <td class="text-info font-monospace">{{ metadata.generator or 'None' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-secondary">Canonical URL</td>
+                                    <td class="text-light font-monospace">{{ metadata.canonical_url or 'None' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-secondary">HTML Language</td>
+                                    <td class="text-light font-monospace">{{ metadata.language or 'None' }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h6 class="text-light fw-bold mb-2">OpenGraph Metadata (og:*)</h6>
+                        {% set og = metadata.get_open_graph() %}
+                        {% if og %}
+                            <div class="table-responsive">
+                                <table class="table table-dark table-sm mb-0">
+                                    <thead class="table-secondary">
+                                        <tr>
+                                            <th>Property</th>
+                                            <th>Content</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for k, v in og.items() %}
+                                            <tr>
+                                                <td class="font-monospace text-info">og:{{ k }}</td>
+                                                <td class="text-light small text-break">{{ v }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="text-secondary small mb-0">No OpenGraph tags found on the target page.</p>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-4 text-secondary">
+                            <p class="mb-0">No metadata records extracted.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

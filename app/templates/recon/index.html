@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Reconnaissance Hub | AppSentinel{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h1 class="h3 fw-bold mb-1 text-light">
+                <i class="fa-solid fa-satellite-dish text-info me-2"></i>Passive Reconnaissance Hub
+            </h1>
+            <p class="text-secondary mb-0 small">
+                Gathers availability, HTTP security headers, framework fingerprints, DNS records, and in-scope endpoint inventories for authorized targets.
+            </p>
+        </div>
+        <div>
+            <a href="{{ url_for('targets.index') }}" class="btn btn-outline-info btn-sm">
+                <i class="fa-solid fa-crosshairs me-1"></i> Manage Targets
+            </a>
+        </div>
+    </div>
+
+    <!-- Target Selection Card -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-5">
+            <div class="card card-cyber h-100">
+                <div class="card-header-cyber d-flex align-items-center justify-content-between">
+                    <span class="fw-bold text-light">
+                        <i class="fa-solid fa-play text-success me-2"></i>Launch Recon Scan
+                    </span>
+                    <span class="badge bg-dark border border-secondary text-info">Target Scope</span>
+                </div>
+                <div class="card-body p-4">
+                    {% if verified_targets %}
+                        <form method="POST" id="startReconForm">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="mb-3">
+                                <label for="target_select" class="form-label text-secondary small fw-bold">Select Verified Target</label>
+                                <select class="form-select form-control-cyber" id="target_select" name="target_id" required>
+                                    <option value="" disabled selected>-- Choose an authorized target --</option>
+                                    {% for tgt in verified_targets %}
+                                        <option value="{{ tgt.id }}" data-url="{{ tgt.target_url }}" data-domain="{{ tgt.domain }}">
+                                            {{ tgt.name }} ({{ tgt.domain }}) - [{{ tgt.environment }}]
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="alert alert-dark border border-secondary p-3 mb-3 small">
+                                <div class="d-flex align-items-start gap-2">
+                                    <i class="fa-solid fa-shield-halved text-info mt-1"></i>
+                                    <div>
+                                        <strong>Scope Enforcement:</strong> Only verified domain targets are permissible. All discovery is passive, safe, and restricted to the authorized host.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="button" id="launchBtn" class="btn btn-cyber-primary w-100" onclick="launchRecon()">
+                                <i class="fa-solid fa-radar me-1"></i> Start Reconnaissance
+                            </button>
+                        </form>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fa-solid fa-shield-virus fa-3x text-warning mb-3"></i>
+                            <h5 class="text-light">No Verified Targets Available</h5>
+                            <p class="text-secondary small mb-3">
+                                Reconnaissance requires verified ownership. Please complete DNS TXT or HTTP well-known verification on your targets first.
+                            </p>
+                            <a href="{{ url_for('targets.index') }}" class="btn btn-outline-info btn-sm">
+                                <i class="fa-solid fa-list-check me-1"></i> View Targets & Verify
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recon Overview Metrics -->
+        <div class="col-lg-7">
+            <div class="card card-cyber h-100">
+                <div class="card-header-cyber d-flex align-items-center justify-content-between">
+                    <span class="fw-bold text-light">
+                        <i class="fa-solid fa-network-wired text-info me-2"></i>Active Target Summary
+                    </span>
+                    <span class="badge bg-dark border border-secondary text-secondary">V5 Engine</span>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3 text-center mb-3">
+                        <div class="col-4">
+                            <div class="p-3 border border-secondary rounded bg-dark">
+                                <div class="h3 fw-bold text-info mb-1">{{ verified_targets|length }}</div>
+                                <div class="text-secondary small">Verified Targets</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-3 border border-secondary rounded bg-dark">
+                                <div class="h3 fw-bold text-warning mb-1">{{ unverified_targets|length }}</div>
+                                <div class="text-secondary small">Pending Verification</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-3 border border-secondary rounded bg-dark">
+                                <div class="h3 fw-bold text-success mb-1">{{ recent_scans|length }}</div>
+                                <div class="text-secondary small">Total Scans Run</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="text-light small text-uppercase fw-bold mb-2">Passive Recon Capabilities:</h6>
+                    <ul class="list-unstyled text-secondary small mb-0">
+                        <li class="mb-1"><i class="fa-solid fa-check text-success me-2"></i><strong>Availability Engine:</strong> Online/Offline state, TLS latency, redirect tracing.</li>
+                        <li class="mb-1"><i class="fa-solid fa-check text-success me-2"></i><strong>Fingerprinting:</strong> Servers, CMS, Web Frameworks, JS Libraries, CDN detection.</li>
+                        <li class="mb-1"><i class="fa-solid fa-check text-success me-2"></i><strong>Security Headers:</strong> CSP, HSTS, X-Frame-Options, MIME sniff, Permissions policy.</li>
+                        <li class="mb-1"><i class="fa-solid fa-check text-success me-2"></i><strong>Endpoint Discovery:</strong> Safe crawling via links, form actions, scripts, robots.txt, sitemaps.</li>
+                        <li><i class="fa-solid fa-check text-success me-2"></i><strong>DNS Enumeration:</strong> A, AAAA, MX, NS, TXT, CNAME records.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Scans Table -->
+    <div class="card card-cyber">
+        <div class="card-header-cyber d-flex align-items-center justify-content-between">
+            <span class="fw-bold text-light">
+                <i class="fa-solid fa-clock-rotate-left text-info me-2"></i>Recent Reconnaissance Scans
+            </span>
+            <span class="text-secondary small">Showing last {{ recent_scans|length }} scans</span>
+        </div>
+        <div class="card-body p-0">
+            {% if recent_scans %}
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0 align-middle">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th class="ps-4">Scan ID</th>
+                                <th>Target</th>
+                                <th>Status</th>
+                                <th>Availability</th>
+                                <th>Techs Detected</th>
+                                <th>Endpoints</th>
+                                <th>Duration</th>
+                                <th>Date</th>
+                                <th class="text-end pe-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in recent_scans %}
+                                <tr>
+                                    <td class="ps-4 fw-mono text-info">#{{ s.id }}</td>
+                                    <td>
+                                        <div class="fw-bold text-light">{{ s.target.name if s.target else 'Target deleted' }}</div>
+                                        <div class="text-secondary small">{{ s.target.domain if s.target else '-' }}</div>
+                                    </td>
+                                    <td>
+                                        {% if s.status == 'completed' %}
+                                            <span class="badge bg-success-subtle text-success border border-success">Completed</span>
+                                        {% elif s.status == 'running' %}
+                                            <span class="badge bg-primary-subtle text-primary border border-primary">Running...</span>
+                                        {% elif s.status == 'cancelled' %}
+                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary">Cancelled</span>
+                                        {% else %}
+                                            <span class="badge bg-danger-subtle text-danger border border-danger">Failed</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if s.availability_status == 'ONLINE' %}
+                                            <span class="badge bg-success"><i class="fa-solid fa-circle-check me-1"></i>ONLINE ({{ s.http_status or 200 }})</span>
+                                        {% elif s.availability_status == 'BLOCKED' %}
+                                            <span class="badge bg-warning text-dark"><i class="fa-solid fa-shield me-1"></i>BLOCKED</span>
+                                        {% elif s.availability_status == 'TIMEOUT' %}
+                                            <span class="badge bg-secondary"><i class="fa-solid fa-clock me-1"></i>TIMEOUT</span>
+                                        {% elif s.availability_status == 'SSL_ERROR' %}
+                                            <span class="badge bg-danger"><i class="fa-solid fa-lock me-1"></i>SSL_ERROR</span>
+                                        {% else %}
+                                            <span class="badge bg-dark border border-secondary">{{ s.availability_status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-dark border border-secondary text-info">{{ s.total_technologies }} detected</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-dark border border-secondary text-light">{{ s.total_endpoints }} URLs</span>
+                                    </td>
+                                    <td class="text-secondary small">{{ s.duration_seconds }}s</td>
+                                    <td class="text-secondary small">{{ s.created_at.strftime('%Y-%m-%d %H:%M') if s.created_at else '-' }}</td>
+                                    <td class="text-end pe-4">
+                                        <a href="{{ url_for('recon.results', scan_id=s.id) }}" class="btn btn-outline-info btn-sm">
+                                            <i class="fa-solid fa-eye me-1"></i> View Results
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5 text-secondary">
+                    <i class="fa-solid fa-satellite fa-3x mb-3 text-secondary"></i>
+                    <p class="mb-0">No reconnaissance scans executed yet. Select a verified target above to launch your first scan.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function launchRecon() {
+    const sel = document.getElementById("target_select");
+    if (!sel || !sel.value) {
+        alert("Please select a verified target.");
+        return;
+    }
+    const form = document.getElementById("startReconForm");
+    form.action = "/recon/start/" + sel.value;
+    const btn = document.getElementById("launchBtn");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Running Reconnaissance...';
+    form.submit();
+}
+</script>
+{% endblock %}
