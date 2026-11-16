@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account | AppSentinel{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height: 75vh;">
+    <div class="col-md-7 col-lg-6 col-xl-5">
+        <div class="card card-cyber">
+            <div class="card-header-cyber text-center pb-2">
+                <div class="mb-2">
+                    <span class="d-inline-flex p-3 rounded-circle bg-dark border border-secondary">
+                        <i class="fa-solid fa-user-shield fa-2xl text-info"></i>
+                    </span>
+                </div>
+                <h4 class="fw-bold mt-2 mb-1">Analyst Registration</h4>
+                <p class="text-muted-cyber small mb-0">Join AppSentinel to configure security scans and monitor vulnerabilities.</p>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('auth.register') }}" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        <label for="full_name" class="form-label text-muted-cyber small fw-semibold">
+                            <i class="fa-solid fa-id-badge me-1 text-info"></i> Full Name
+                        </label>
+                        {{ form.full_name(class="form-control form-control-cyber" + (" is-invalid" if form.full_name.errors else ""), id="full_name", placeholder="Alice Vance") }}
+                        {% for error in form.full_name.errors %}
+                            <div class="invalid-feedback d-block small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label for="username" class="form-label text-muted-cyber small fw-semibold">
+                                <i class="fa-solid fa-user me-1 text-info"></i> Username
+                            </label>
+                            {{ form.username(class="form-control form-control-cyber" + (" is-invalid" if form.username.errors else ""), id="username", placeholder="avance") }}
+                            {% for error in form.username.errors %}
+                                <div class="invalid-feedback d-block small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="email" class="form-label text-muted-cyber small fw-semibold">
+                                <i class="fa-solid fa-envelope me-1 text-info"></i> Email Address
+                            </label>
+                            {{ form.email(class="form-control form-control-cyber" + (" is-invalid" if form.email.errors else ""), id="email", placeholder="alice@security.io") }}
+                            {% for error in form.email.errors %}
+                                <div class="invalid-feedback d-block small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label text-muted-cyber small fw-semibold">
+                            <i class="fa-solid fa-key me-1 text-info"></i> Password
+                        </label>
+                        <div class="input-group">
+                            {{ form.password(class="form-control form-control-cyber" + (" is-invalid" if form.password.errors else ""), id="password", placeholder="••••••••••••", autocomplete="new-password") }}
+                            <button class="btn btn-outline-secondary border-secondary text-secondary" type="button" id="togglePassword">
+                                <i class="fa-regular fa-eye" id="togglePasswordIcon"></i>
+                            </button>
+                        </div>
+                        <div class="form-text text-muted-cyber small mt-1">
+                            Must be ≥ 8 chars with uppercase, lowercase, digit, and special symbol.
+                        </div>
+                        {% for error in form.password.errors %}
+                            <div class="invalid-feedback d-block small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="confirm_password" class="form-label text-muted-cyber small fw-semibold">
+                            <i class="fa-solid fa-circle-check me-1 text-info"></i> Confirm Password
+                        </label>
+                        {{ form.confirm_password(class="form-control form-control-cyber" + (" is-invalid" if form.confirm_password.errors else ""), id="confirm_password", placeholder="••••••••••••", autocomplete="new-password") }}
+                        {% for error in form.confirm_password.errors %}
+                            <div class="invalid-feedback d-block small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-grid mb-3">
+                        {{ form.submit(class="btn btn-cyber-primary") }}
+                    </div>
+
+                    <div class="text-center text-muted-cyber small">
+                        Already have an authorized account?
+                        <a href="{{ url_for('auth.login') }}" class="text-info text-decoration-none fw-semibold">
+                            Sign In <i class="fa-solid fa-arrow-right fa-xs"></i>
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById("togglePassword").addEventListener("click", function () {
+        const passwordInput = document.getElementById("password");
+        const icon = document.getElementById("togglePasswordIcon");
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            icon.classList.remove("fa-eye");
+            icon.classList.add("fa-eye-slash");
+        } else {
+            passwordInput.type = "password";
+            icon.classList.remove("fa-eye-slash");
+            icon.classList.add("fa-eye");
+        }
+    });
+</script>
+{% endblock %}

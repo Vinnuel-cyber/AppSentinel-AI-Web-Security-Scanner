@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AppSentinel | Security Operations{% endblock %}</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #070d19;
+            --bg-card: #0e172a;
+            --bg-card-border: #1e293b;
+            --accent-cyan: #00d2ff;
+            --accent-blue: #3a86ff;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --color-critical: #ef4444;
+            --color-high: #f97316;
+            --color-medium: #eab308;
+            --color-low: #22c55e;
+            --color-info: #06b6d4;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar-cyber {
+            background-color: rgba(14, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--bg-card-border);
+        }
+
+        .brand-logo {
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: var(--accent-cyan) !important;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-logo i {
+            color: var(--accent-blue);
+        }
+
+        .card-cyber {
+            background-color: var(--bg-card);
+            border: 1px solid var(--bg-card-border);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .card-header-cyber {
+            background-color: transparent;
+            border-bottom: 1px solid var(--bg-card-border);
+            padding: 1.25rem 1.5rem;
+        }
+
+        .form-control-cyber {
+            background-color: #070d19;
+            border: 1px solid var(--bg-card-border);
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+        }
+
+        .form-control-cyber:focus {
+            background-color: #070d19;
+            border-color: var(--accent-cyan);
+            color: var(--text-primary);
+            box-shadow: 0 0 0 0.2rem rgba(0, 210, 255, 0.15);
+        }
+
+        .btn-cyber-primary {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+            border: none;
+            color: #070d19;
+            font-weight: 700;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-cyber-primary:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0, 210, 255, 0.3);
+            color: #070d19;
+        }
+
+        .badge-role-admin {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .badge-role-user {
+            background-color: rgba(0, 210, 255, 0.15);
+            color: #7dd3fc;
+            border: 1px solid rgba(0, 210, 255, 0.3);
+        }
+
+        .text-muted-cyber {
+            color: var(--text-secondary) !important;
+        }
+
+        footer {
+            margin-top: auto;
+            border-top: 1px solid var(--bg-card-border);
+            background-color: rgba(14, 23, 42, 0.6);
+            padding: 1.5rem 0;
+            font-size: 0.85rem;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-cyber py-3">
+        <div class="container">
+            <a class="navbar-brand brand-logo" href="/">
+                <i class="fa-solid fa-shield-halved fa-lg"></i>
+                <span>AppSentinel</span>
+                <span class="badge bg-dark border border-secondary text-info ms-1" style="font-size: 0.65rem;">v2.0-AUTH</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navMenu">
+                <ul class="navbar-nav ms-auto align-items-center gap-2">
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.is_admin() %}
+                            <li class="nav-item">
+                                <a class="nav-link text-warning" href="{{ url_for('auth.admin_users') }}">
+                                    <i class="fa-solid fa-users-gear me-1"></i> Admin Users
+                                </a>
+                            </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.profile') }}">
+                                <i class="fa-solid fa-user-shield me-1"></i> {{ current_user.username }}
+                                <span class="badge {{ 'badge-role-admin' if current_user.is_admin() else 'badge-role-user' }} ms-1">
+                                    {{ current_user.role }}
+                                </span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
+                                {% if logout_form %}
+                                    {{ logout_form.hidden_tag() }}
+                                {% else %}
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                {% endif %}
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="fa-solid fa-arrow-right-from-bracket me-1"></i> Sign Out
+                                </button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.login') }}">
+                                <i class="fa-solid fa-right-to-bracket me-1"></i> Sign In
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-cyber-primary btn-sm px-3" href="{{ url_for('auth.register') }}">
+                                <i class="fa-solid fa-user-plus me-1"></i> Get Started
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <main class="container my-4 flex-grow-1">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show card-cyber border-{{ category if category != 'error' else 'danger' }} mb-4" role="alert">
+                                <i class="fa-solid {{ 'fa-circle-check text-success' if category == 'success' else 'fa-triangle-exclamation text-warning' if category == 'warning' else 'fa-circle-exclamation text-danger' }} me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center text-muted-cyber">
+        <div class="container">
+            <p class="mb-1"><i class="fa-solid fa-shield-halved text-info me-1"></i> <strong>AppSentinel</strong> — AI-Powered Web Application Security Scanner</p>
+            <p class="mb-0" style="font-size: 0.75rem;">Enterprise-Grade SOC Platform &bull; OWASP Top 10 Aligned &bull; Confidential & Authorized Use Only</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

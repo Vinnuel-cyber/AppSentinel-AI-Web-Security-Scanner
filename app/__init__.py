@@ -1,8 +1,9 @@
 import os
 import logging
-from flask import Flask, jsonify
+import click
+from flask import Flask, jsonify, render_template, request, current_app
 from flask_login import LoginManager
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, CSRFError
 from config import config_by_name
 from app.models import db, User
 
@@ -75,13 +76,20 @@ def create_app(config_name: str = "default") -> Flask:
         return response
 
     # Error Handlers
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(error):
+        current_app.logger.warning("CSRF validation failure from IP %s on %s: %s", request.remote_addr, request.path, error.description)
+        if request.is_json:
+            return jsonify({"error": "CSRF Error", "message": error.description}), 400
+        return jsonify({"error": "CSRF Validation Failed", "message": "The form session or CSRF token is invalid or expired. Please refresh and try again."}), 400
+
     @app.errorhandler(400)
     def bad_request(error):
         return jsonify({"error": "Bad Request", "message": str(error)}), 400
 
     @app.errorhandler(403)
     def forbidden(error):
-        return jsonify({"error": "Forbidden", "message": "Access denied"}), 403
+        return jsonify({"error": "Forbidden", "message": "Access denied. Insufficient privileges."}), 403
 
     @app.errorhandler(404)
     def not_found(error):
@@ -99,5 +107,37 @@ def create_app(config_name: str = "default") -> Flask:
         with app.app_context():
             db.create_all()
             print("AppSentinel database tables created successfully.")
+
+    @app.cli.command("create-admin")
+    @click.option("--username", prompt="Admin Username", help="Admin username")
+    @click.option("--email", prompt="Admin Email", help="Admin email address")
+    @click.option("--password", prompt="Admin Password", hide_input=True, confirmation_prompt=True, help="Admin password")
+    @click.option("--full-name", default="System Administrator", help="Admin full name")
+    def create_admin_command(username, email, password, full_name):
+        """Bootstrap an administrative user safely without hardcoded secrets."""
+        with app.app_context():
+            existing = User.query.filter(
+                (User.username.ilike(username.strip())) | (User.email.ilike(email.strip()))
+            ).first()
+            if existing:
+                print(f"Error: A user with username '{username}' or email '{email}' already exists.")
+                return
+
+            valid, err = User.validate_password_strength(password)
+            if not valid:
+                print(f"Error: {err}")
+                return
+
+            admin = User(
+                username=username.strip(),
+                email=email.strip().lower(),
+                full_name=full_name.strip(),
+                role="ADMIN",
+                is_active=True,
+            )
+            admin.set_password(password, enforce_complexity=True)
+            db.session.add(admin)
+            db.session.commit()
+            print(f"Administrator '{username}' created successfully.")
 
     return app

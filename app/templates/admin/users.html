@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Admin User Management | AppSentinel{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card card-cyber">
+            <div class="card-header-cyber d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="fw-bold mb-0 text-warning">
+                        <i class="fa-solid fa-users-gear me-2"></i> User Administration
+                    </h4>
+                    <p class="text-muted-cyber small mb-0">Authorized Security Operators and Analysts</p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-dark border border-secondary text-info px-3 py-2">
+                        Total Users: {{ users|length }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0" style="background-color: transparent;">
+                        <thead>
+                            <tr class="border-secondary text-muted-cyber small">
+                                <th class="ps-4">ID</th>
+                                <th>Analyst</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Last Login</th>
+                                <th class="pe-4">Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in users %}
+                                <tr class="border-secondary align-middle">
+                                    <td class="ps-4 text-muted-cyber small">#{{ u.id }}</td>
+                                    <td class="fw-bold text-light">
+                                        <i class="fa-solid fa-user-circle me-1 text-secondary"></i>
+                                        {{ u.full_name or '—' }}
+                                    </td>
+                                    <td><code>{{ u.username }}</code></td>
+                                    <td class="text-muted-cyber">{{ u.email }}</td>
+                                    <td>
+                                        <span class="badge {{ 'badge-role-admin' if u.is_admin() else 'badge-role-user' }}">
+                                            {{ u.role }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if u.is_active %}
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Disabled</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small text-muted-cyber">
+                                        {{ u.last_login.strftime('%Y-%m-%d %H:%M') if u.last_login else 'Never' }}
+                                    </td>
+                                    <td class="pe-4 small text-muted-cyber">
+                                        {{ u.created_at.strftime('%Y-%m-%d') if u.created_at else '—' }}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-4 text-muted-cyber">No registered users found.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
